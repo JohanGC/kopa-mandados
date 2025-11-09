@@ -91,7 +91,9 @@ const Offers = () => {
                 )}
               </div>
               <div className="card-footer">
-                <button className="btn btn-primary w-100">Ver Detalles</button>
+                <Link to={`/offer/${offer._id}`} className="btn btn-primary w-100">
+                  Ver Detalles
+                </Link>
               </div>
             </div>
           </div>

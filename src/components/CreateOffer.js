@@ -100,6 +100,7 @@ const CreateOffer = () => {
       setLoading(false);
     }
   };
+  navigate('/my-offers');
 
   if (!currentUser || (currentUser.rol !== 'oferente' && currentUser.rol !== 'administrador')) {
     return (

@@ -100,6 +100,7 @@ const CreateActivity = () => {
       setLoading(false);
     }
   };
+  navigate('/my-activities');
 
   if (!currentUser || (currentUser.rol !== 'oferente' && currentUser.rol !== 'administrador')) {
     return (

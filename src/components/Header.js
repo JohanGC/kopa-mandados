@@ -1,12 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import axios from 'axios';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, API_URL } = useAuth();
   const { getTotalItems } = useCart();
+  const [favoritesCount, setFavoritesCount] = useState(0);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchFavoritesCount();
+    }
+  }, [currentUser]);
+
+  const fetchFavoritesCount = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/favorites/user`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setFavoritesCount(response.data.length);
+    } catch (error) {
+      console.error('Error fetching favorites count:', error);
+    }
+  };
+
+  useEffect(() => {
+  const handleFavoritesUpdate = () => {
+    fetchFavoritesCount();
+  };
+
+  window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+  
+  return () => {
+    window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+  };
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -28,17 +61,18 @@ const Header = () => {
             <Link to="/orders" className="text-white mx-2 text-decoration-none nav-link-custom">🛵 Mandados</Link>
 
             {/* Icono del carrito */}
-            <button 
-              className="btn btn-header position-relative ms-3"
-              onClick={() => navigate('/cart')}
-            >
-              🛍️ Carrito
-              {getTotalItems() > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {getTotalItems()}
-                </span>
-              )}
-            </button>
+          <button 
+            className="btn btn-header position-relative ms-3"
+            onClick={() => navigate('/cart')}
+            title="Ver carrito"
+          >
+            🛒 Carrito
+            {getTotalItems() > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {getTotalItems()}
+              </span>
+            )}
+          </button>
 
             {currentUser ? (
               <div className="dropdown ms-3">
@@ -97,12 +131,18 @@ const Header = () => {
                     </>
                   )}
                   
-                  {/* Opciones para todos los usuarios */}
+                  {/* Favoritos con contador */}
                   <li>
-                    <Link to="/favorites" className="dropdown-item">
+                    <Link to="/favorites" className="dropdown-item position-relative">
                       ❤️ Mis Favoritos
+                      {favoritesCount > 0 && (
+                        <span className="position-absolute top-50 end-0 translate-middle-y badge rounded-pill bg-danger me-2">
+                          {favoritesCount}
+                        </span>
+                      )}
                     </Link>
                   </li>
+
                   <li>
                     <Link to="/settings" className="dropdown-item">
                       ⚙️ Configuración

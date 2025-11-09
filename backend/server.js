@@ -9,6 +9,9 @@ import userRoutes from './routes/users.js';
 import offerRoutes from './routes/offers.js';
 import activityRoutes from './routes/activities.js';
 import orderRoutes from './routes/orders.js';
+import favoriteRoutes from './routes/favorites.js';
+import reviewRoutes from './routes/reviews.js';
+// Elimina esta línea duplicada: import favoritesRoutes from './routes/favorites.js';
 
 dotenv.config();
 
@@ -24,6 +27,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/favorites', favoriteRoutes); // Solo una vez
+app.use('/api/reviews', reviewRoutes);
+// Elimina esta línea duplicada: app.use('/api/favorites', favoritesRoutes);
 
 // Ruta de prueba
 app.get('/api/test', (req, res) => {

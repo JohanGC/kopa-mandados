@@ -1,81 +1,106 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 const CartContext = createContext();
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart debe ser usado dentro de un CartProvider');
+const cartReducer = (state, action) => {
+  switch (action.type) {
+    case 'ADD_TO_CART':
+      const existingItemIndex = state.items.findIndex(
+        item => item._id === action.payload._id && item.type === action.payload.type
+      );
+      
+      if (existingItemIndex >= 0) {
+        const updatedItems = [...state.items];
+        updatedItems[existingItemIndex].quantity += 1;
+        return { ...state, items: updatedItems };
+      } else {
+        return {
+          ...state,
+          items: [...state.items, { ...action.payload, quantity: 1 }]
+        };
+      }
+    
+    case 'REMOVE_FROM_CART':
+      return {
+        ...state,
+        items: state.items.filter(
+          item => !(item._id === action.payload.id && item.type === action.payload.type)
+        )
+      };
+    
+    case 'UPDATE_QUANTITY':
+      return {
+        ...state,
+        items: state.items.map(item =>
+          item._id === action.payload.id && item.type === action.payload.type
+            ? { ...item, quantity: action.payload.quantity }
+            : item
+        )
+      };
+    
+    case 'CLEAR_CART':
+      return { ...state, items: [] };
+    
+    case 'LOAD_CART':
+      return { ...state, items: action.payload };
+    
+    default:
+      return state;
   }
-  return context;
+};
+
+const initialState = {
+  items: []
 };
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  const [state, dispatch] = useReducer(cartReducer, initialState);
 
   // Cargar carrito desde localStorage al inicializar
   useEffect(() => {
-    const savedCart = localStorage.getItem('kopamandados-cart');
+    const savedCart = localStorage.getItem('cart');
     if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
+      dispatch({ type: 'LOAD_CART', payload: JSON.parse(savedCart) });
     }
   }, []);
 
   // Guardar carrito en localStorage cuando cambie
   useEffect(() => {
-    localStorage.setItem('kopamandados-cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    localStorage.setItem('cart', JSON.stringify(state.items));
+  }, [state.items]);
 
   const addToCart = (item) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(cartItem => cartItem._id === item._id);
-      
-      if (existingItem) {
-        return prevItems.map(cartItem =>
-          cartItem._id === item._id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      } else {
-        return [...prevItems, { ...item, quantity: 1 }];
-      }
-    });
+    dispatch({ type: 'ADD_TO_CART', payload: item });
   };
 
-  const removeFromCart = (itemId) => {
-    setCartItems(prevItems => prevItems.filter(item => item._id !== itemId));
+  const removeFromCart = (id, type) => {
+    dispatch({ type: 'REMOVE_FROM_CART', payload: { id, type } });
   };
 
-  const updateQuantity = (itemId, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-      return;
+  const updateQuantity = (id, type, quantity) => {
+    if (quantity < 1) {
+      removeFromCart(id, type);
+    } else {
+      dispatch({ type: 'UPDATE_QUANTITY', payload: { id, type, quantity } });
     }
-
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item._id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
   };
 
   const clearCart = () => {
-    setCartItems([]);
+    dispatch({ type: 'CLEAR_CART' });
   };
 
   const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+    return state.items.reduce((total, item) => total + item.quantity, 0);
   };
 
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => {
-      const price = item.precioDescuento || item.precioOriginal || 0;
-      return total + (price * item.quantity);
+    return state.items.reduce((total, item) => {
+      return total + (item.precioDescuento * item.quantity);
     }, 0);
   };
 
   const value = {
-    cartItems,
+    cartItems: state.items,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -89,4 +114,12 @@ export const CartProvider = ({ children }) => {
       {children}
     </CartContext.Provider>
   );
+};
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart debe ser usado dentro de un CartProvider');
+  }
+  return context;
 };

@@ -112,6 +112,9 @@ const Orders = () => {
                     {order.estado === 'aceptado' ? 'Mandado Aceptado' : 'Completado'}
                   </button>
                 )}
+                <Link to={`/order/${order._id}`} className="btn btn-primary w-100">
+                  Ver Detalles
+                </Link>
               </div>
             </div>
           </div>
