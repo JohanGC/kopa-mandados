@@ -1,3 +1,4 @@
+// models/User.js
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
@@ -14,19 +15,16 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    required: true
   },
   rol: {
     type: String,
-    enum: ['administrador', 'oferente', 'usuario', 'domiciliario'],
+    enum: ['usuario', 'oferente', 'domiciliario', 'administrador'],
     default: 'usuario'
   },
   empresa: {
     type: String,
-    required: function() {
-      return this.rol === 'oferente';
-    }
+    required: function() { return this.rol === 'oferente'; }
   },
   telefono: {
     type: String,
@@ -36,13 +34,32 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  fechaRegistro: {
-    type: Date,
-    default: Date.now
+  // Nuevos campos específicos para domiciliarios
+  placaVehiculo: {
+    type: String,
+    required: function() { return this.rol === 'domiciliario'; }
+  },
+  tipoVehiculo: {
+    type: String,
+    enum: ['moto', 'bicicleta', 'carro', 'caminando'],
+    required: function() { return this.rol === 'domiciliario'; }
+  },
+  ubicacionActual: {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+    ultimaActualizacion: { type: Date, default: null }
+  },
+  disponible: {
+    type: Boolean,
+    default: true
   },
   isActive: {
     type: Boolean,
     default: true
+  },
+  fechaRegistro: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true

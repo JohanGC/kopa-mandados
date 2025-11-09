@@ -1,6 +1,6 @@
 import express from 'express';
 import Activity from '../models/Activity.js';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js'; // ✅ Cambiado
 
 const router = express.Router();
 

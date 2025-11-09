@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+{/*import LocationMap from '../components/LocationMap';*/}
+import GoogleMap from '../components/GoogleMap';
 
 const Home = () => {
   const slides = [
@@ -80,6 +82,11 @@ const Home = () => {
           <span className="carousel-control-next-icon" aria-hidden="true"></span>
           <span className="visually-hidden">Siguiente</span>
         </button>
+      </div>
+
+      <div className="container mt-4">
+        {/* Mapa de domiciliarios */}
+        <GoogleMap />
       </div>
 
       <section className="text-center mb-5">

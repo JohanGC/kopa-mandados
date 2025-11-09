@@ -1,6 +1,7 @@
+// routes/reviews.js
 import express from 'express';
 import Review from '../models/Review.js';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js'; // ✅ CORREGIDO: Cambiado a importación nombrada
 
 const router = express.Router();
 

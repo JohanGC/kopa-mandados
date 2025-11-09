@@ -8,6 +8,7 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "@googlemaps/react-wrapper": "^1.2.0",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
     "react": "^18.2.0",

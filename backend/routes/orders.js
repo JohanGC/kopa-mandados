@@ -1,6 +1,6 @@
 import express from 'express';
 import Order from '../models/Order.js';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js'; // ✅ Cambiado
 
 const router = express.Router();
 
@@ -77,32 +77,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Aceptar mandado (domiciliarios)
-router.put('/:id/accept', auth, async (req, res) => {
-  try {
-    if (req.user.rol !== 'domiciliario') {
-      return res.status(403).json({ message: 'Solo domiciliarios pueden aceptar mandados' });
-    }
-
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { 
-        ejecutante: req.user.userId,
-        estado: 'aceptado'
-      },
-      { new: true }
-    ).populate('solicitante', 'nombre telefono email')
-     .populate('ejecutante', 'nombre telefono email');
-
-    if (!order) {
-      return res.status(404).json({ message: 'Mandado no encontrado' });
-    }
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
 
 // Actualizar estado del mandado
 router.put('/:id', auth, async (req, res) => {

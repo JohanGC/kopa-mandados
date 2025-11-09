@@ -1,6 +1,7 @@
+// routes/favorites.js
 import express from 'express';
 import Favorite from '../models/Favorite.js';
-import auth from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js'; // ✅ CORREGIDO: Cambiado a importación nombrada
 
 const router = express.Router();
 
