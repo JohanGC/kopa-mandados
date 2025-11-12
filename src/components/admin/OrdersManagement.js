@@ -1,3 +1,4 @@
+// OrdersManagement.js - VERSIÓN COMPLETA CORREGIDA
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -16,7 +17,12 @@ const OrdersManagement = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(`${API_URL}/orders`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setOrders(response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -28,7 +34,15 @@ const OrdersManagement = () => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      await axios.put(`${API_URL}/orders/${orderId}`, { estado: newStatus });
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/orders/${orderId}`, 
+        { estado: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
       addNotification(`Estado del mandado actualizado a ${newStatus}`, 'success');
       fetchOrders();
     } catch (error) {
@@ -40,7 +54,12 @@ const OrdersManagement = () => {
   const handleDeleteOrder = async (orderId) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este mandado?')) {
       try {
-        await axios.delete(`${API_URL}/orders/${orderId}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API_URL}/orders/${orderId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         addNotification('Mandado eliminado exitosamente', 'success');
         fetchOrders();
       } catch (error) {
@@ -196,4 +215,5 @@ const OrdersManagement = () => {
   );
 };
 
+// ✅ EXPORT DEFAULT CORRECTO
 export default OrdersManagement;

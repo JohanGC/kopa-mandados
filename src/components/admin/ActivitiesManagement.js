@@ -1,3 +1,4 @@
+// ActivitiesManagement.js - VERSIÓN COMPLETA CORREGIDA
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -16,7 +17,12 @@ const ActivitiesManagement = () => {
 
   const fetchActivities = async () => {
     try {
-      const response = await axios.get(`${API_URL}/activities`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/activities`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setActivities(response.data);
     } catch (error) {
       console.error('Error fetching activities:', error);
@@ -28,7 +34,15 @@ const ActivitiesManagement = () => {
 
   const handleStatusChange = async (activityId, newStatus) => {
     try {
-      await axios.put(`${API_URL}/activities/${activityId}`, { estado: newStatus });
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/activities/${activityId}`, 
+        { estado: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
       addNotification(`Actividad ${newStatus === 'aprobada' ? 'aprobada' : 'rechazada'}`, 'success');
       fetchActivities();
     } catch (error) {
@@ -40,7 +54,12 @@ const ActivitiesManagement = () => {
   const handleDeleteActivity = async (activityId) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta actividad?')) {
       try {
-        await axios.delete(`${API_URL}/activities/${activityId}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API_URL}/activities/${activityId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         addNotification('Actividad eliminada exitosamente', 'success');
         fetchActivities();
       } catch (error) {
@@ -191,4 +210,5 @@ const ActivitiesManagement = () => {
   );
 };
 
+// ✅ EXPORT DEFAULT CORRECTO
 export default ActivitiesManagement;

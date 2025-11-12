@@ -84,10 +84,6 @@ const Home = () => {
         </button>
       </div>
 
-      <div className="container mt-4">
-        {/* Mapa de domiciliarios */}
-        <GoogleMap />
-      </div>
 
       <section className="text-center mb-5">
         <h1 className="display-4 mb-4">Descubre las mejores ofertas y actividades</h1>
@@ -124,6 +120,10 @@ const Home = () => {
           </div>
         </div>
       </section>
+      <div className="container mt-4">
+        {/* Mapa de domiciliarios */}
+        <GoogleMap />
+      </div>
     </div>
   );
 };

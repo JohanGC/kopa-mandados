@@ -1,3 +1,4 @@
+// Header.js - VERSIÓN COMPLETAMENTE CORREGIDA
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -6,52 +7,145 @@ import axios from 'axios';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { currentUser, logout, API_URL } = useAuth();
+  const { currentUser, logout } = useAuth();
   const { getTotalItems } = useCart();
   const [favoritesCount, setFavoritesCount] = useState(0);
 
+  // ✅ CORREGIDO: Función simplificada y corregida
+  const getApiUrl = () => {
+    // En desarrollo, usar directamente la URL del backend
+    return process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  };
+
   useEffect(() => {
-    if (currentUser) {
-      fetchFavoritesCount();
+    if (currentUser && currentUser._id) {
+      fetchFavoritesCountOptimized();
+    } else {
+      setFavoritesCount(0);
     }
   }, [currentUser]);
 
+  // ✅ CORREGIDO: Función principal mejorada
   const fetchFavoritesCount = async () => {
     try {
-      const response = await axios.get(`${API_URL}/favorites/user`, {
+      const token = localStorage.getItem('token');
+      if (!token || !currentUser) {
+        setFavoritesCount(0);
+        return;
+      }
+
+      const API_BASE = getApiUrl();
+      // ✅ CORREGIDO: URL correcta - solo una vez /api
+      const url = `${API_BASE}/api/favorites/user`;
+      
+      console.log('🔍 Fetching favorites from:', url);
+      
+      const response = await axios.get(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${token}`
+        },
+        timeout: 8000
       });
-      setFavoritesCount(response.data.length);
+      
+      // ✅ CORREGIDO: Manejo seguro de la respuesta
+      let count = 0;
+      if (Array.isArray(response.data)) {
+        count = response.data.length;
+      } else if (response.data && response.data.count !== undefined) {
+        count = response.data.count;
+      } else if (response.data && response.data.favorites) {
+        count = response.data.favorites.length;
+      }
+      
+      console.log(`✅ Favorites count: ${count}`);
+      setFavoritesCount(count);
     } catch (error) {
-      console.error('Error fetching favorites count:', error);
+      console.error('❌ Error fetching favorites count:', error);
+      
+      // ✅ CORREGIDO: Manejo específico de errores
+      if (error.response?.status === 404) {
+        console.log('⚠️ Ruta de favoritos no implementada aún');
+        setFavoritesCount(0);
+      } else if (error.response?.status === 401) {
+        console.log('🔐 No autorizado - token inválido');
+        setFavoritesCount(0);
+      } else if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
+        console.log('🌐 Error de red - servidor no disponible');
+        setFavoritesCount(0);
+      } else {
+        setFavoritesCount(0);
+      }
+    }
+  };
+
+  // ✅ CORREGIDO: Función optimizada con estructura mejorada
+  const fetchFavoritesCountOptimized = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !currentUser) {
+        setFavoritesCount(0);
+        return;
+      }
+
+      const API_BASE = getApiUrl();
+      
+      // ✅ PRIMERO intentar con la nueva ruta de contador
+      try {
+        const countResponse = await axios.get(`${API_BASE}/api/favorites/user/count`, {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 5000
+        });
+        
+        console.log('✅ Contador obtenido via /count:', countResponse.data.count);
+        setFavoritesCount(countResponse.data.count || 0);
+        return;
+        
+      } catch (countError) {
+        // Si falla /count, intentar con la ruta original
+        if (countError.response?.status === 404) {
+          console.log('🔄 Ruta /count no disponible, usando ruta original...');
+          await fetchFavoritesCount();
+        } else {
+          throw countError;
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error en fetch optimizado:', error);
+      setFavoritesCount(0);
     }
   };
 
   useEffect(() => {
-  const handleFavoritesUpdate = () => {
-    fetchFavoritesCount();
-  };
+    const handleFavoritesUpdate = () => {
+      if (currentUser) {
+        fetchFavoritesCountOptimized();
+      }
+    };
 
-  window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
-  
-  return () => {
-    window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
-  };
-  }, []);
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    
+    return () => {
+      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+    };
+  }, [currentUser]);
 
   const handleLogout = () => {
     logout();
+    setFavoritesCount(0);
     navigate('/');
   };
+
+  // ✅ CORREGIDO: Renderizado seguro
+  const userRole = currentUser?.rol || '';
+  const userName = currentUser?.nombre || 'Usuario';
 
   return (
     <header className="fondo-header header-2 p-3">
       <div className="container">
         <nav className="d-flex justify-content-between align-items-center">
           <Link to="/">
-            <img className="logo" src='/images/logoKopa_W.svg' alt="Kopa Logo"></img>
+            <img className="logo" src='/images/logoKopa_w.png' alt="Kopa Logo" />
           </Link>
           
           <div className="d-flex align-items-center">
@@ -60,31 +154,38 @@ const Header = () => {
             <Link to="/activities" className="text-white mx-2 text-decoration-none nav-link-custom">Actividades</Link>
             <Link to="/orders" className="text-white mx-2 text-decoration-none nav-link-custom">🛵 Mandados</Link>
 
-            {/* Icono del carrito */}
-          <button 
-            className="btn btn-header position-relative ms-3"
-            onClick={() => navigate('/cart')}
-            title="Ver carrito"
-          >
-            🛒 Carrito
-            {getTotalItems() > 0 && (
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {getTotalItems()}
-              </span>
+            {/* Enlace directo al Panel de Domiciliario */}
+            {userRole === 'domiciliario' && (
+              <Link to="/domiciliario" className="text-white mx-2 text-decoration-none nav-link-custom">
+                📊 Panel Domiciliario
+              </Link>
             )}
-          </button>
+
+            {/* Icono del carrito */}
+            <button 
+              className="btn btn-header position-relative ms-3"
+              onClick={() => navigate('/cart')}
+              title="Ver carrito"
+            >
+              🛒 Carrito
+              {getTotalItems() > 0 && (
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  {getTotalItems()}
+                </span>
+              )}
+            </button>
 
             {currentUser ? (
               <div className="dropdown ms-3">
                 <button className="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  {currentUser.rol === 'administrador' ? '👑 ' : 
-                   currentUser.rol === 'oferente' ? '🏢 ' : 
-                   currentUser.rol === 'domiciliario' ? '🛵 ' : '👤 '}
-                  {currentUser.nombre}
+                  {userRole === 'administrador' ? '👑 ' : 
+                   userRole === 'oferente' ? '🏢 ' : 
+                   userRole === 'domiciliario' ? '🛵 ' : '👤 '}
+                  {userName}
                 </button>
                 <ul className="dropdown-menu dropdown-menu-end">
                   {/* Panel de Administración - Solo para admins */}
-                  {currentUser.rol === 'administrador' && (
+                  {userRole === 'administrador' && (
                     <>
                       <li>
                         <Link to="/admin" className="dropdown-item text-danger">
@@ -103,7 +204,7 @@ const Header = () => {
                   </li>
                   
                   {/* Opciones para Oferentes y Administradores */}
-                  {(currentUser.rol === 'oferente' || currentUser.rol === 'administrador') && (
+                  {(userRole === 'oferente' || userRole === 'administrador') && (
                     <>
                       <li>
                         <Link to="/my-offers" className="dropdown-item">
@@ -120,8 +221,13 @@ const Header = () => {
                   )}
                   
                   {/* Opciones para Domiciliarios */}
-                  {currentUser.rol === 'domiciliario' && (
+                  {userRole === 'domiciliario' && (
                     <>
+                      <li>
+                        <Link to="/domiciliario" className="dropdown-item">
+                          🛵 Panel de Domiciliario
+                        </Link>
+                      </li>
                       <li>
                         <Link to="/my-orders" className="dropdown-item">
                           📋 Mis Mandados

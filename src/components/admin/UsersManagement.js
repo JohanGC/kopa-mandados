@@ -1,3 +1,4 @@
+// UsersManagement.js - VERSIÓN COMPLETA CORREGIDA
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -17,7 +18,12 @@ const UsersManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/users`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -34,7 +40,12 @@ const UsersManagement = () => {
 
   const handleUpdateUser = async (userData) => {
     try {
-      await axios.put(`${API_URL}/users/${editingUser._id}`, userData);
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/users/${editingUser._id}`, userData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       addNotification('Usuario actualizado exitosamente', 'success');
       setShowEditModal(false);
       setEditingUser(null);
@@ -47,7 +58,15 @@ const UsersManagement = () => {
 
   const handleToggleUserStatus = async (userId, currentStatus) => {
     try {
-      await axios.put(`${API_URL}/users/${userId}`, { isActive: !currentStatus });
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/users/${userId}`, 
+        { isActive: !currentStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
       addNotification(`Usuario ${!currentStatus ? 'activado' : 'desactivado'}`, 'success');
       fetchUsers();
     } catch (error) {
@@ -317,4 +336,5 @@ const EditUserModal = ({ user, onSave, onClose }) => {
   );
 };
 
+// ✅ EXPORT DEFAULT CORRECTO
 export default UsersManagement;

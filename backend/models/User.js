@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   },
   empresa: {
     type: String,
-    required: function() { return this.rol === 'oferente'; }
+    default: '' // Cambiado a no requerido por defecto
   },
   telefono: {
     type: String,
@@ -37,12 +37,12 @@ const userSchema = new mongoose.Schema({
   // Nuevos campos específicos para domiciliarios
   placaVehiculo: {
     type: String,
-    required: function() { return this.rol === 'domiciliario'; }
+    default: '' // Cambiado a no requerido por defecto
   },
   tipoVehiculo: {
     type: String,
-    enum: ['moto', 'bicicleta', 'carro', 'caminando'],
-    required: function() { return this.rol === 'domiciliario'; }
+    enum: ['moto', 'bicicleta', 'carro', 'caminando', ''],
+    default: '' // Cambiado a no requerido por defecto
   },
   ubicacionActual: {
     lat: { type: Number, default: null },
@@ -63,6 +63,14 @@ const userSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Validación personalizada para empresa cuando es oferente
+userSchema.pre('save', function(next) {
+  if (this.rol === 'oferente' && (!this.empresa || this.empresa.trim() === '')) {
+    return next(new Error('El campo empresa es requerido para oferentes'));
+  }
+  next();
 });
 
 export default mongoose.model('User', userSchema);

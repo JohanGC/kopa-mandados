@@ -80,7 +80,7 @@ router.delete('/:id', auth, async (req, res) => {
 // NUEVAS RUTAS PARA DOMICILIARIOS Y UBICACIÓN
 // =============================================
 
-// Obtener domiciliarios disponibles
+// Obtener domiciliarios disponibles - RUTA CORREGIDA
 router.get('/domiciliarios/disponibles', async (req, res) => {
   try {
     console.log('📡 Solicitando domiciliarios disponibles...');
@@ -89,19 +89,18 @@ router.get('/domiciliarios/disponibles', async (req, res) => {
       rol: 'domiciliario',
       disponible: true,
       isActive: true,
-      'ubicacionActual.lat': { $ne: null },
-      'ubicacionActual.lng': { $ne: null }
+      'ubicacionActual.lat': { $exists: true, $ne: null },
+      'ubicacionActual.lng': { $exists: true, $ne: null }
     }).select('-password -email -empresa -direccion -fechaRegistro');
     
     console.log(`✅ Encontrados ${domiciliarios.length} domiciliarios disponibles`);
     
-    res.json(domiciliarios);
+    // Asegurarse de que la respuesta sea siempre un array
+    res.json(domiciliarios || []);
   } catch (error) {
     console.error('❌ Error en /domiciliarios/disponibles:', error);
-    res.status(500).json({ 
-      message: 'Error obteniendo domiciliarios',
-      error: error.message 
-    });
+    // En caso de error, devolver array vacío para no romper el frontend
+    res.status(500).json([]);
   }
 });
 

@@ -1,3 +1,4 @@
+// OffersManagement.js - VERSIÓN COMPLETA CORREGIDA
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -16,7 +17,12 @@ const OffersManagement = () => {
 
   const fetchOffers = async () => {
     try {
-      const response = await axios.get(`${API_URL}/offers`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/offers`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setOffers(response.data);
     } catch (error) {
       console.error('Error fetching offers:', error);
@@ -28,7 +34,15 @@ const OffersManagement = () => {
 
   const handleStatusChange = async (offerId, newStatus) => {
     try {
-      await axios.put(`${API_URL}/offers/${offerId}`, { estado: newStatus });
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/offers/${offerId}`, 
+        { estado: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
       addNotification(`Oferta ${newStatus === 'aprobada' ? 'aprobada' : 'rechazada'}`, 'success');
       fetchOffers();
     } catch (error) {
@@ -40,7 +54,12 @@ const OffersManagement = () => {
   const handleDeleteOffer = async (offerId) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta oferta?')) {
       try {
-        await axios.delete(`${API_URL}/offers/${offerId}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`${API_URL}/offers/${offerId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         addNotification('Oferta eliminada exitosamente', 'success');
         fetchOffers();
       } catch (error) {
@@ -185,4 +204,5 @@ const OffersManagement = () => {
   );
 };
 
+// ✅ EXPORT DEFAULT CORRECTO
 export default OffersManagement;

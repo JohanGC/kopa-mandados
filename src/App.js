@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -20,6 +20,7 @@ import Favorites from './pages/Favorites';
 import MyOffers from './pages/MyOffers';
 import MyActivities from './pages/MyActivities';
 import Cart from './pages/Cart';
+import DomiciliarioDashboard from './components/DomiciliarioDashboard';
 
 // Importar componentes de detalles
 import OfferDetails from './components/OfferDetails';
@@ -63,6 +64,15 @@ const NotificationContainer = () => {
 
 // Componente principal
 const AppContent = () => {
+  useEffect(() => {
+    // Solicitar permisos de notificación
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
   return (
     <Router>
       <div className="App d-flex flex-column min-vh-100">
@@ -96,11 +106,9 @@ const AppContent = () => {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/my-offers" element={<MyOffers />} />
             <Route path="/my-activities" element={<MyActivities />} />
+            <Route path="/domiciliario" element={<DomiciliarioDashboard />} />
             
             {/* Rutas de páginas en desarrollo */}
-            <Route path="/my-offers" element={<div className="container mt-4"><h1>Mis Ofertas</h1><p>Página en desarrollo</p></div>} />
-            <Route path="/my-activities" element={<div className="container mt-4"><h1>Mis Actividades</h1><p>Página en desarrollo</p></div>} />
-            <Route path="/favorites" element={<div className="container mt-4"><h1>Mis Favoritos</h1><p>Página en desarrollo</p></div>} />
             <Route path="/settings" element={<div className="container mt-4"><h1>Configuración</h1><p>Página en desarrollo</p></div>} />
             <Route path="/my-orders" element={<div className="container mt-4"><h1>Mis Mandados</h1><p>Página en desarrollo</p></div>} />
 
