@@ -11,6 +11,7 @@ const Home = () => {
       description: "Descubre descuentos especiales en tus marcas favoritas",
       image: "/images/img1.jpg",
       buttonText: "Ver Ofertas",
+      buttonStyle: { backgroundColor: '#FF005A', borderColor: '#FF005A' },
       link: "/offers"
     },
     {
@@ -19,6 +20,7 @@ const Home = () => {
       description: "Participa en experiencias inolvidables cerca de ti",
       image: "/images/img2.jpg",
       buttonText: "Explorar Actividades",
+      buttonStyle: { backgroundColor: '#FF005A', borderColor: '#FF005A' },
       link: "/activities"
     },
     {
@@ -27,6 +29,7 @@ const Home = () => {
       description: "Solo para usuarios registrados",
       image: "/images/img3.jpg",
       buttonText: "Registrarse",
+      buttonStyle: { backgroundColor: '#FF005A', borderColor: '#FF005A' },
       link: "/register"
     }
   ];
@@ -66,7 +69,11 @@ const Home = () => {
               <div className="carousel-caption fond-slid d-none d-md-block bg-dark bg-opacity-50 rounded p-4">
                 <h3 className="display-6">{slide.title}</h3>
                 <p className="lead">{slide.description}</p>
-                <Link to={slide.link} className="btn btn-primary btn-lg">
+                <Link 
+                  to={slide.link} 
+                  className="btn btn-primary btn-lg"
+                  style={slide.buttonStyle || {}}
+                >
                   {slide.buttonText}
                 </Link>
               </div>
@@ -88,7 +95,7 @@ const Home = () => {
       <section className="text-center mb-5">
         <h1 className="display-4 mb-4">Descubre las mejores ofertas y actividades</h1>
         <p className="lead mb-4">Explora nuestro catálogo sin necesidad de registro o inicia sesión para participar y disfrutar de beneficios exclusivos</p>
-        <Link to="/offers" className="btn btn-primary btn-lg">Ver ofertas disponibles</Link>
+        <Link to="/offers" className="btn btn-1 btn-primary btn-lg">Ver ofertas disponibles</Link>
       </section>
 
       <section className="row">

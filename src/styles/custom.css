@@ -11,13 +11,28 @@
 }
 .color-back-2 {
     background-color: #F0F0F0 !important;
+    color: black !important;
+    border: none !important;
 }
 .color-back-3 {
     background-color: #FF005A !important;
+    color: white !important;
+    border: none !important;
 }
 .color-back-4 {
     background-color: #FFC800 !important;
+    color: black !important;
+    border: none !important;
 }
 .color-back-5 {
     background-color: #32A096 !important;
+    color: white !important;
+    border: none !important;
+}
+
+
+.btn-1 {
+  background-color: #FF005A !important;
+  color: white !important;
+  border: none !important;
 }

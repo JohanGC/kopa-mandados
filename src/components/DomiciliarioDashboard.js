@@ -425,31 +425,31 @@ const DomiciliarioDashboard = () => {
             <div className="row mt-3">
               <div className="col-md-3">
                 <div className="card text-white bg-success">
-                  <div className="card-body">
+                  <div className="card-body color-back-3">
                     <h4>{estadisticas.resumen?.totalCompletados || 0}</h4>
                     <small>Completados</small>
                   </div>
                 </div>
               </div>
               <div className="col-md-3">
-                <div className="card text-white bg-primary">
-                  <div className="card-body">
+                <div className="card text-white">
+                  <div className="card-body color-back-4">
                     <h4>${(estadisticas.finanzas?.ingresosTotales || 0).toLocaleString()}</h4>
                     <small>Ingresos Totales</small>
                   </div>
                 </div>
               </div>
               <div className="col-md-3">
-                <div className="card text-white bg-warning">
-                  <div className="card-body">
+                <div className="card text-white">
+                  <div className="card-body color-back-5">
                     <h4>{estadisticas.resumen?.mandadosEsteMes || 0}</h4>
                     <small>Este Mes</small>
                   </div>
                 </div>
               </div>
               <div className="col-md-3">
-                <div className="card text-white bg-info">
-                  <div className="card-body">
+                <div className="card text-white">
+                  <div className="card-body color-back-2">
                     <h4>{estadisticas.reputacion?.calificacionPromedio || 0}★</h4>
                     <small>Calificación</small>
                   </div>
@@ -469,14 +469,14 @@ const DomiciliarioDashboard = () => {
                   className={`btn ${disponible ? 'btn-success' : 'btn-outline-success'}`}
                   onClick={() => updateDisponibilidad(true)}
                 >
-                  🟢 Disponible
+                  Disponible
                 </button>
                 <button
                   type="button"
                   className={`btn ${!disponible ? 'btn-danger' : 'btn-outline-danger'}`}
                   onClick={() => updateDisponibilidad(false)}
                 >
-                  🔴 No Disponible
+                  No Disponible
                 </button>
               </div>
               

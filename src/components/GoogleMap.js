@@ -526,7 +526,7 @@ const GoogleMap = () => {
 
   return (
     <div className="card mb-4">
-      <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <div className="card-header btn-1 bg-primary text-white d-flex justify-content-between align-items-center">
         <h5 className="mb-0">🛵 Mapa de Domiciliarios</h5>
         <button 
           className="btn btn-light btn-sm"
