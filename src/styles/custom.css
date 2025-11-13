@@ -36,3 +36,105 @@
   color: white !important;
   border: none !important;
 }
+
+
+/* Estilos para Mis Mandados */
+.domiciliario-info {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.card {
+  transition: all 0.3s ease;
+  border: 1px solid #dee2e6;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: none;
+}
+
+.btn-group .btn.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Animación para expandir/contraer */
+.card-body {
+  transition: all 0.3s ease;
+}
+
+/* Estilos para la línea de tiempo */
+.timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #e9ecef;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #007bff;
+  border: 2px solid white;
+}
+
+/* Badges personalizados */
+.badge {
+  font-size: 0.75em;
+  padding: 0.5em 0.75em;
+}
+
+/* Mapa responsivo */
+.map-container {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+/* Estados de los mandados */
+.status-pending { border-left: 4px solid #ffc107; }
+.status-accepted { border-left: 4px solid #17a2b8; }
+.status-in-progress { border-left: 4px solid #007bff; }
+.status-completed { border-left: 4px solid #28a745; }
+.status-cancelled { border-left: 4px solid #dc3545; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .btn-group {
+    flex-wrap: wrap;
+  }
+}

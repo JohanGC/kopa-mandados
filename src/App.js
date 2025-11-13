@@ -33,6 +33,10 @@ import OffersManagement from './components/admin/OffersManagement';
 import ActivitiesManagement from './components/admin/ActivitiesManagement';
 import OrdersManagement from './components/admin/OrdersManagement';
 
+// NUEVOS COMPONENTES IMPORTADOS
+import OrderTracking from './components/OrderTracking';
+import MyOrders from './pages/MyOrders'; // ✅ ESTA ES LA IMPORTACIÓN QUE FALTABA
+
 import ErrorBoundary from './components/ErrorBoundary';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
@@ -99,6 +103,8 @@ const AppContent = () => {
             <Route path="/orders" element={<Orders />} />
             <Route path="/order/:id" element={<OrderDetails />} />
             <Route path="/create-order" element={<CreateOrder />} />
+            {/* NUEVA RUTA: Seguimiento de mandados */}
+            <Route path="/order-tracking/:id" element={<OrderTracking />} />
             
             {/* Rutas de usuario */}
             <Route path="/profile" element={<Profile />} />
@@ -110,9 +116,11 @@ const AppContent = () => {
             
             {/* Rutas de páginas en desarrollo */}
             <Route path="/settings" element={<div className="container mt-4"><h1>Configuración</h1><p>Página en desarrollo</p></div>} />
-            <Route path="/my-orders" element={<div className="container mt-4"><h1>Mis Mandados</h1><p>Página en desarrollo</p></div>} />
+            
+            {/* ✅ RUTA CORREGIDA: Mis Mandados */}
+            <Route path="/my-orders" element={<MyOrders />} />
 
-            {/* Carrito de compras - Nueva ruta */}
+            {/* Carrito de compras */}
             <Route path="/cart" element={<Cart />} />
             
             {/* Ruta 404 */}

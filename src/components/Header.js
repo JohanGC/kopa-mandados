@@ -236,6 +236,15 @@ const Header = () => {
                       <li><hr className="dropdown-divider"/></li>
                     </>
                   )}
+
+                  {/* Agrega esta sección para todos los usuarios que no sean domiciliarios */}
+                  {userRole !== 'domiciliario' && (
+                    <li>
+                      <Link to="/my-orders" className="dropdown-item">
+                        📦 Mis Mandados
+                      </Link>
+                    </li>
+                  )}
                   
                   {/* Favoritos con contador */}
                   <li>
