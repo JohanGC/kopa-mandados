@@ -41,6 +41,20 @@ import ErrorBoundary from './components/ErrorBoundary';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import './styles/custom.css';
+import './styles/offerDetails.css';
+import './styles/home.css';
+import './styles/myorders.css';
+import './styles/myoffers.css';
+import './styles/myactivities.css';
+import './styles/profile.css';
+import './styles/admin.css';
+import './styles/activitydetails.css';
+import './styles/orderdetails.css';
+import './styles/favorites.css';
+import './styles/login.css';
+import './styles/register.css';
+import './styles/cart.css';
+import './styles/ordertracking.css';
 
 // Componente de notificaciones
 const NotificationContainer = () => {

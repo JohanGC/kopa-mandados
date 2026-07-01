@@ -13,6 +13,7 @@ const OrderDetails = () => {
   const [loading, setLoading] = useState(true);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [review, setReview] = useState({ calificacion: 5, comentario: '' });
+  const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
     fetchOrderDetails();
@@ -81,13 +82,44 @@ const OrderDetails = () => {
     }
   };
 
+  const getStatusConfig = (estado) => {
+    const statusConfig = {
+      pendiente: { label: 'Pendiente', color: 'warning', icon: '⏳' },
+      aceptado: { label: 'Aceptado', color: 'primary', icon: '👍' },
+      en_camino: { label: 'En camino', color: 'info', icon: '🛵' },
+      completado: { label: 'Completado', color: 'success', icon: '✅' },
+      cancelado: { label: 'Cancelado', color: 'error', icon: '❌' }
+    };
+    return statusConfig[estado] || statusConfig.pendiente;
+  };
+
+  const getCategoryIcon = (categoria) => {
+    const icons = {
+      documentos: '📄',
+      comida: '🍕',
+      farmacia: '💊',
+      mercado: '🛒',
+      otros: '📦'
+    };
+    return icons[categoria] || '📦';
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'No especificada';
+    const date = new Date(dateString);
+    return {
+      full: date.toLocaleString('es-ES'),
+      date: date.toLocaleDateString('es-ES'),
+      time: date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    };
+  };
+
   if (loading) {
     return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
+      <div className="modern-loading">
+        <div className="loading-content">
+          <div className="loading-spinner"></div>
+          <p>Cargando detalles del mandado...</p>
         </div>
       </div>
     );
@@ -95,197 +127,351 @@ const OrderDetails = () => {
 
   if (!order) {
     return (
-      <div className="container mt-4">
-        <div className="alert alert-danger">
-          <h4>Mandado no encontrado</h4>
+      <div className="modern-container">
+        <div className="error-state">
+          <div className="error-icon">😕</div>
+          <h2>Mandado no encontrado</h2>
           <p>El mandado que buscas no existe o ha sido eliminado.</p>
-          <Link to="/orders" className="btn btn-primary">Volver a mandados</Link>
+          <Link to="/orders" className="btn-modern primary">
+            Volver a mandados
+          </Link>
         </div>
       </div>
     );
   }
 
+  const statusConfig = getStatusConfig(order.estado);
+  const creationDate = formatDateTime(order.createdAt);
+  const limitDate = formatDateTime(order.fechaLimite);
+  
   const canAccept = currentUser?.rol === 'domiciliario' && order.estado === 'pendiente';
   const canComplete = currentUser?.id === order.solicitante?._id && order.estado === 'aceptado';
   const canReview = currentUser?.id === order.solicitante?._id && order.estado === 'completado';
 
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card shadow">
-            <div className="card-header bg-primary text-white">
-              <h4 className="mb-0">🛵 Detalles del Mandado</h4>
+    <div className="main-content">
+      <div className="modern-container">
+        {/* Header del mandado */}
+        <div className="order-header">
+          <div className="breadcrumb">
+            <Link to="/orders" className="breadcrumb-link">Mandados</Link>
+            <span className="breadcrumb-separator">/</span>
+            <span className="breadcrumb-current">#{order._id?.slice(-6).toUpperCase()}</span>
+          </div>
+          
+          <div className="order-status">
+            <div className={`status-badge ${statusConfig.color}`}>
+              <span className="status-icon">{statusConfig.icon}</span>
+              {statusConfig.label}
             </div>
-            <div className="card-body">
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <h5>📋 Información del Mandado</h5>
-                  <p><strong>Categoría:</strong> {order.categoria}</p>
-                  <p><strong>Estado:</strong> 
-                    <span className={`badge ${
-                      order.estado === 'pendiente' ? 'bg-warning' :
-                      order.estado === 'aceptado' ? 'bg-primary' :
-                      order.estado === 'completado' ? 'bg-success' : 'bg-secondary'
-                    } ms-2`}>
-                      {order.estado}
-                    </span>
-                  </p>
-                  <p><strong>Precio ofertado:</strong> 
-                    <span className="h5 text-success ms-2">${order.precioOfertado?.toLocaleString()}</span>
-                  </p>
+          </div>
+        </div>
+
+        <div className="order-layout">
+          {/* Contenido principal */}
+          <div className="order-main">
+            {/* Información principal */}
+            <div className="order-card">
+              <div className="order-title-section">
+                <div className="order-category">
+                  <span className="category-icon">{getCategoryIcon(order.categoria)}</span>
+                  <span className="category-name">{order.categoria}</span>
                 </div>
-                <div className="col-md-6">
-                  <h5>⏰ Tiempo</h5>
-                  <p><strong>Creación:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-                  {order.fechaLimite && (
-                    <p><strong>Límite:</strong> {new Date(order.fechaLimite).toLocaleString()}</p>
-                  )}
+                <h1 className="order-title">{order.descripcion}</h1>
+                <div className="order-price">
+                  ${order.precioOfertado?.toLocaleString()}
                 </div>
               </div>
 
-              <div className="mb-4">
-                <h5>📝 Descripción</h5>
-                <p className="lead">{order.descripcion}</p>
+              {/* Navegación por pestañas */}
+              <div className="tab-navigation">
+                <button 
+                  className={`tab-btn ${activeTab === 'details' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('details')}
+                >
+                  Detalles
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'route' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('route')}
+                >
+                  Ruta
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('users')}
+                >
+                  Personas
+                </button>
               </div>
 
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <h5>📍 Recoger en</h5>
-                  <p>{order.ubicacionRecogida}</p>
-                </div>
-                <div className="col-md-6">
-                  <h5>🏠 Entregar en</h5>
-                  <p>{order.ubicacionEntrega}</p>
-                </div>
-              </div>
+              {/* Contenido de pestañas */}
+              <div className="tab-content">
+                {activeTab === 'details' && (
+                  <div className="tab-panel">
+                    <div className="details-grid">
+                      <div className="detail-section">
+                        <h3>📋 Información General</h3>
+                        <div className="detail-item">
+                          <label>Categoría</label>
+                          <span>{order.categoria}</span>
+                        </div>
+                        <div className="detail-item">
+                          <label>Precio</label>
+                          <span className="price-value">${order.precioOfertado?.toLocaleString()}</span>
+                        </div>
+                        <div className="detail-item">
+                          <label>Fecha de creación</label>
+                          <span>{creationDate.full}</span>
+                        </div>
+                        {order.fechaLimite && (
+                          <div className="detail-item">
+                            <label>Fecha límite</label>
+                            <span>{limitDate.full}</span>
+                          </div>
+                        )}
+                      </div>
 
-              {order.notasAdicionales && (
-                <div className="mb-4">
-                  <h5>📋 Notas Adicionales</h5>
-                  <p>{order.notasAdicionales}</p>
-                </div>
-              )}
-
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="card bg-light">
-                    <div className="card-body">
-                      <h6>👤 Solicitante</h6>
-                      <p className="mb-1"><strong>Nombre:</strong> {order.solicitante?.nombre}</p>
-                      <p className="mb-1"><strong>Teléfono:</strong> {order.solicitante?.telefono}</p>
-                      <p className="mb-0"><strong>Email:</strong> {order.solicitante?.email}</p>
+                      <div className="detail-section">
+                        <h3>📝 Descripción</h3>
+                        <p className="order-description">{order.descripcion}</p>
+                        
+                        {order.notasAdicionales && (
+                          <>
+                            <h4>Notas Adicionales</h4>
+                            <p className="order-notes">{order.notasAdicionales}</p>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {order.ejecutante && (
-                  <div className="col-md-6">
-                    <div className="card bg-light">
-                      <div className="card-body">
-                        <h6>🚴 Domiciliario</h6>
-                        <p className="mb-1"><strong>Nombre:</strong> {order.ejecutante?.nombre}</p>
-                        <p className="mb-1"><strong>Teléfono:</strong> {order.ejecutante?.telefono}</p>
-                        <p className="mb-0"><strong>Email:</strong> {order.ejecutante?.email}</p>
+                )}
+
+                {activeTab === 'route' && (
+                  <div className="tab-panel">
+                    <div className="route-visualization">
+                      <div className="route-step">
+                        <div className="step-icon pickup">📍</div>
+                        <div className="step-content">
+                          <h4>Punto de Recogida</h4>
+                          <p>{order.ubicacionRecogida}</p>
+                        </div>
                       </div>
+                      
+                      <div className="route-connector">
+                        <div className="connector-line"></div>
+                        <div className="connector-arrow">↓</div>
+                      </div>
+
+                      <div className="route-step">
+                        <div className="step-icon delivery">🏠</div>
+                        <div className="step-content">
+                          <h4>Punto de Entrega</h4>
+                          <p>{order.ubicacionEntrega}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="map-placeholder">
+                      <div className="map-icon">🗺️</div>
+                      <p>Mapa de ruta disponible próximamente</p>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'users' && (
+                  <div className="tab-panel">
+                    <div className="users-grid">
+                      {/* Solicitante */}
+                      <div className="user-card">
+                        <div className="user-header">
+                          <div className="user-avatar">
+                            {order.solicitante?.nombre?.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="user-info">
+                            <h4>{order.solicitante?.nombre}</h4>
+                            <span className="user-role">Solicitante</span>
+                          </div>
+                        </div>
+                        <div className="user-contact">
+                          <div className="contact-item">
+                            <span className="contact-icon">📞</span>
+                            <a href={`tel:${order.solicitante?.telefono}`} className="contact-link">
+                              {order.solicitante?.telefono}
+                            </a>
+                          </div>
+                          <div className="contact-item">
+                            <span className="contact-icon">✉️</span>
+                            <a href={`mailto:${order.solicitante?.email}`} className="contact-link">
+                              {order.solicitante?.email}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Domiciliario */}
+                      {order.ejecutante ? (
+                        <div className="user-card">
+                          <div className="user-header">
+                            <div className="user-avatar">
+                              {order.ejecutante?.nombre?.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="user-info">
+                              <h4>{order.ejecutante?.nombre}</h4>
+                              <span className="user-role">Domiciliario</span>
+                            </div>
+                          </div>
+                          <div className="user-contact">
+                            <div className="contact-item">
+                              <span className="contact-icon">📞</span>
+                              <a href={`tel:${order.ejecutante?.telefono}`} className="contact-link">
+                                {order.ejecutante?.telefono}
+                              </a>
+                            </div>
+                            <div className="contact-item">
+                              <span className="contact-icon">✉️</span>
+                              <a href={`mailto:${order.ejecutante?.email}`} className="contact-link">
+                                {order.ejecutante?.email}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="user-card empty">
+                          <div className="user-header">
+                            <div className="user-avatar">👤</div>
+                            <div className="user-info">
+                              <h4>Esperando domiciliario</h4>
+                              <span className="user-role">Pendiente de asignación</span>
+                            </div>
+                          </div>
+                          <p className="empty-message">
+                            Este mandado está esperando que un domiciliario lo acepte.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="col-md-4">
-          <div className="card shadow sticky-top" style={{ top: '20px' }}>
-            <div className="card-body">
-              <h5>🎯 Acciones</h5>
-              
-              <div className="d-grid gap-2 mb-3">
+          {/* Sidebar de acciones */}
+          <div className="order-sidebar">
+            <div className="action-card">
+              <div className="action-header">
+                <h3>🎯 Acciones</h3>
+                <p>Gestiona este mandado</p>
+              </div>
+
+              <div className="action-buttons">
                 {canAccept && (
                   <button
-                    className="btn btn-success btn-lg"
+                    className="btn-modern success"
                     onClick={handleAcceptOrder}
                   >
-                    ✅ Aceptar Mandado
+                    <span className="btn-icon">✅</span>
+                    Aceptar Mandado
                   </button>
                 )}
 
                 {canComplete && (
                   <button
-                    className="btn btn-warning btn-lg"
+                    className="btn-modern warning"
                     onClick={handleCompleteOrder}
                   >
-                    🏁 Marcar como Completado
+                    <span className="btn-icon">🏁</span>
+                    Marcar como Completado
                   </button>
                 )}
 
                 {canReview && (
                   <button
-                    className="btn btn-info btn-lg"
+                    className="btn-modern info"
                     onClick={() => setShowReviewModal(true)}
                   >
-                    ⭐ Calificar Servicio
+                    <span className="btn-icon">⭐</span>
+                    Calificar Servicio
                   </button>
                 )}
 
                 <button
-                  className="btn btn-outline-primary"
+                  className="btn-modern outline"
                   onClick={() => navigate('/orders')}
                 >
-                  ← Volver a Mandados
+                  <span className="btn-icon">←</span>
+                  Volver a Mandados
                 </button>
               </div>
 
-              <div className="alert alert-info">
-                <small>
-                  <strong>Estado actual:</strong> {order.estado}<br />
-                  {order.ejecutante && (
-                    <><strong>Domiciliario:</strong> {order.ejecutante.nombre}</>
-                  )}
-                </small>
+              <div className="order-summary">
+                <div className="summary-item">
+                  <span className="summary-label">Estado actual</span>
+                  <span className={`summary-value status-${order.estado}`}>
+                    {statusConfig.label}
+                  </span>
+                </div>
+                {order.ejecutante && (
+                  <div className="summary-item">
+                    <span className="summary-label">Domiciliario asignado</span>
+                    <span className="summary-value">{order.ejecutante.nombre}</span>
+                  </div>
+                )}
+                <div className="summary-item">
+                  <span className="summary-label">ID del mandado</span>
+                  <span className="summary-value order-id">#{order._id?.slice(-6).toUpperCase()}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modal de Calificación */}
+      {/* Modal de Calificación Moderno */}
       {showReviewModal && (
-        <div className="modal fade show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
-          <div className="modal-dialog">
+        <div className="modal-overlay">
+          <div className="modal-container">
             <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">⭐ Calificar Servicio</h5>
+              <div className="modal-header">
+                <div className="modal-title">
+                  <span className="modal-icon">⭐</span>
+                  <h3>Calificar Servicio</h3>
+                </div>
                 <button 
-                  type="button" 
-                  className="btn-close btn-close-white" 
+                  className="modal-close"
                   onClick={() => setShowReviewModal(false)}
-                ></button>
+                >
+                  ×
+                </button>
               </div>
+              
               <div className="modal-body">
-                <div className="text-center mb-3">
-                  <h6>¿Cómo calificarías el servicio del domiciliario?</h6>
-                  <div className="my-3">
+                <div className="rating-section">
+                  <h4>¿Cómo calificarías el servicio del domiciliario?</h4>
+                  <div className="star-rating">
                     {[1, 2, 3, 4, 5].map(star => (
                       <button
                         key={star}
-                        type="button"
-                        className="btn btn-link p-1"
+                        className={`star-btn ${star <= review.calificacion ? 'active' : ''}`}
                         onClick={() => setReview(prev => ({ ...prev, calificacion: star }))}
                       >
-                        <span style={{ fontSize: '2rem', color: star <= review.calificacion ? '#ffc107' : '#e4e5e9' }}>
-                          {star <= review.calificacion ? '⭐' : '☆'}
+                        <span className="star-icon">
+                          {star <= review.calificacion ? '★' : '☆'}
                         </span>
                       </button>
                     ))}
                   </div>
-                  <p>{review.calificacion} de 5 estrellas</p>
+                  <div className="rating-text">
+                    <span className="rating-score">{review.calificacion}</span>
+                    <span className="rating-max">/5 estrellas</span>
+                  </div>
                 </div>
                 
-                <div className="mb-3">
+                <div className="comment-section">
                   <label className="form-label">Comentario (opcional)</label>
                   <textarea
-                    className="form-control"
+                    className="modern-textarea"
                     rows="4"
                     value={review.comentario}
                     onChange={(e) => setReview(prev => ({ ...prev, comentario: e.target.value }))}
@@ -293,19 +479,19 @@ const OrderDetails = () => {
                   ></textarea>
                 </div>
               </div>
+              
               <div className="modal-footer">
                 <button 
-                  type="button" 
-                  className="btn btn-secondary" 
+                  className="btn-modern outline"
                   onClick={() => setShowReviewModal(false)}
                 >
                   Cancelar
                 </button>
                 <button 
-                  type="button" 
-                  className="btn btn-primary" 
+                  className="btn-modern primary"
                   onClick={handleSubmitReview}
                 >
+                  <span className="btn-icon">📨</span>
                   Enviar Reseña
                 </button>
               </div>

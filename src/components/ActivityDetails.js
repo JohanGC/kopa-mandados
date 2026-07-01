@@ -16,6 +16,7 @@ const ActivityDetails = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
     fetchActivityDetails();
@@ -146,7 +147,6 @@ const ActivityDetails = () => {
 
     if (!activity) return;
 
-    // Crear item para el carrito con la estructura correcta
     const cartItem = {
       _id: activity._id,
       titulo: activity.titulo,
@@ -156,7 +156,7 @@ const ActivityDetails = () => {
       precioDescuento: activity.precioDescuento,
       descuento: activity.descuento,
       imagen: activity.imagen,
-      type: 'activity',  // Tipo específico para identificar en el carrito
+      type: 'activity',
       fecha: activity.fecha,
       hora: activity.hora,
       ubicacion: activity.ubicacion
@@ -166,13 +166,46 @@ const ActivityDetails = () => {
     addNotification('Actividad agregada al carrito', 'success');
   };
 
+  const getActivityTypeIcon = (categoria) => {
+    const icons = {
+      deporte: '⚽',
+      cultural: '🎭',
+      educativa: '📚',
+      social: '👥',
+      recreativa: '🎮',
+      gastronomica: '🍽️',
+      musical: '🎵',
+      arte: '🎨',
+      tecnologia: '💻',
+      bienestar: '🧘'
+    };
+    return icons[categoria] || '🎯';
+  };
+
+  const formatDateTime = (fecha, hora) => {
+    const date = new Date(fecha);
+    return {
+      date: date.toLocaleDateString('es-ES', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }),
+      time: hora,
+      shortDate: date.toLocaleDateString('es-ES', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      })
+    };
+  };
+
   if (loading) {
     return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
+      <div className="modern-loading">
+        <div className="loading-content">
+          <div className="loading-spinner"></div>
+          <p>Cargando actividad...</p>
         </div>
       </div>
     );
@@ -180,167 +213,334 @@ const ActivityDetails = () => {
 
   if (!activity) {
     return (
-      <div className="container mt-4">
-        <div className="alert alert-danger">
-          <h4>Actividad no encontrada</h4>
+      <div className="modern-container">
+        <div className="error-state">
+          <div className="error-icon">😕</div>
+          <h2>Actividad no encontrada</h2>
           <p>La actividad que buscas no existe o ha sido eliminada.</p>
-          <Link to="/activities" className="btn btn-primary">Volver a actividades</Link>
+          <Link to="/activities" className="btn-modern primary">
+            Volver a actividades
+          </Link>
         </div>
       </div>
     );
   }
 
+  const dateTime = formatDateTime(activity.fecha, activity.hora);
+  const participantsCount = activity.participantes?.length || 0;
+  const availableSpots = activity.maxParticipantes - participantsCount;
+  const progressPercentage = (participantsCount / activity.maxParticipantes) * 100;
+  const savings = activity.precioOriginal - activity.precioDescuento;
+
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card shadow">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start mb-4">
-                <h1 className="card-title">{activity.titulo}</h1>
-                <button
-                  className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
-                  onClick={handleAddToFavorites}
-                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                >
-                  {isFavorite ? '❤️' : '🤍'}
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <img
-                  src={activity.imagen || '/images/placeholder-activity.jpg'}
-                  alt={activity.titulo}
-                  className="img-fluid rounded"
-                  style={{ maxHeight: '400px', width: '100%', objectFit: 'cover' }}
-                />
-              </div>
-
-              <div className="mb-4">
-                <h4>Descripción</h4>
-                <p className="lead">{activity.descripcion}</p>
-              </div>
-
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <h5>📅 Fecha y Hora</h5>
-                  <p>
-                    <strong>Fecha:</strong> {new Date(activity.fecha).toLocaleDateString()}<br />
-                    <strong>Hora:</strong> {activity.hora}<br />
-                    <strong>Duración:</strong> {activity.duracion}
-                  </p>
-                </div>
-                <div className="col-md-6">
-                  <h5>📍 Ubicación</h5>
-                  <p>{activity.ubicacion}</p>
-                </div>
-              </div>
-
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <h5>📊 Información</h5>
-                  <p>
-                    <strong>Categoría:</strong> {activity.categoria}<br />
-                    <strong>Participantes:</strong> {activity.participantes?.length || 0}/{activity.maxParticipantes}
-                  </p>
-                </div>
-                <div className="col-md-6">
-                  <h5>🎯 Requisitos</h5>
-                  <p>{activity.requisitos || 'No se requieren conocimientos previos'}</p>
-                </div>
-              </div>
-
-              {activity.creador && (
-                <div className="card bg-light">
-                  <div className="card-body">
-                    <h6>🏢 Información del Organizador</h6>
-                    <p className="mb-1"><strong>Empresa:</strong> {activity.creador.empresa}</p>
-                    <p className="mb-1"><strong>Contacto:</strong> {activity.creador.telefono}</p>
-                    <p className="mb-0"><strong>Email:</strong> {activity.creador.email}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+    <div className="main-content">
+      <div className="modern-container">
+        {/* Header de la actividad */}
+        <div className="activity-header">
+          <div className="breadcrumb">
+            <Link to="/activities" className="breadcrumb-link">Actividades</Link>
+            <span className="breadcrumb-separator">/</span>
+            <span className="breadcrumb-current">{activity.titulo}</span>
           </div>
-
-          {/* Sección de Reseñas */}
-          <div className="card shadow mt-4">
-            <div className="card-body">
-              <h4>⭐ Reseñas y Calificaciones</h4>
-              {reviews.length > 0 ? (
-                reviews.map(review => (
-                  <div key={review._id} className="border-bottom pb-3 mb-3">
-                    <div className="d-flex justify-content-between">
-                      <strong>{review.usuario?.nombre}</strong>
-                      <div>
-                        {'⭐'.repeat(review.calificacion)}
-                        {'☆'.repeat(5 - review.calificacion)}
-                      </div>
-                    </div>
-                    <p className="mb-1">{review.comentario}</p>
-                    <small className="text-muted">
-                      {new Date(review.fecha).toLocaleDateString()}
-                    </small>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted">Aún no hay reseñas para esta actividad.</p>
-              )}
-            </div>
+          
+          <div className="header-actions">
+            <button
+              className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+              onClick={handleAddToFavorites}
+              title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                {isFavorite ? (
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                ) : (
+                  <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                )}
+              </svg>
+            </button>
           </div>
         </div>
 
-        <div className="col-md-4">
-          <div className="card shadow sticky-top" style={{ top: '20px' }}>
-            <div className="card-body">
-              <div className="text-center mb-4">
-                <h3 className="text-success">Precios</h3>
-                <div className="mb-2">
-                  <del className="text-muted h5">${activity.precioOriginal?.toLocaleString()}</del>
+        <div className="activity-layout">
+          {/* Contenido principal */}
+          <div className="activity-main">
+            {/* Imagen principal */}
+            <div className="activity-image-section">
+              <img
+                src={activity.imagen || '/images/placeholder-activity.jpg'}
+                alt={activity.titulo}
+                className="activity-image"
+              />
+              <div className="image-overlay">
+                <div className="date-badge">
+                  <div className="date-day">{dateTime.shortDate}</div>
+                  <div className="date-time">{activity.hora}</div>
                 </div>
-                <div className="h2 text-success mb-0">${activity.precioDescuento?.toLocaleString()}</div>
-                <div className="text-warning h5">
-                  {activity.descuento}% DE DESCUENTO
+                {activity.descuento > 0 && (
+                  <div className="discount-badge">
+                    -{activity.descuento}%
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Navegación por pestañas */}
+            <div className="tab-navigation">
+              <button 
+                className={`tab-btn ${activeTab === 'details' ? 'active' : ''}`}
+                onClick={() => setActiveTab('details')}
+              >
+                Detalles
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'location' ? 'active' : ''}`}
+                onClick={() => setActiveTab('location')}
+              >
+                Ubicación
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+                onClick={() => setActiveTab('reviews')}
+              >
+                Reseñas ({reviews.length})
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'organizer' ? 'active' : ''}`}
+                onClick={() => setActiveTab('organizer')}
+              >
+                Organizador
+              </button>
+            </div>
+
+            {/* Contenido de pestañas */}
+            <div className="tab-content">
+              {activeTab === 'details' && (
+                <div className="tab-panel">
+                  <div className="activity-title-section">
+                    <div className="activity-type">
+                      <span className="type-icon">{getActivityTypeIcon(activity.categoria)}</span>
+                      <span className="type-category">{activity.categoria}</span>
+                    </div>
+                    <h1 className="activity-title">{activity.titulo}</h1>
+                    <p className="activity-description">{activity.descripcion}</p>
+                  </div>
+
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <div className="info-icon">📅</div>
+                      <div className="info-content">
+                        <label>Fecha del evento</label>
+                        <span>{dateTime.date}</span>
+                      </div>
+                    </div>
+                    <div className="info-item">
+                      <div className="info-icon">⏰</div>
+                      <div className="info-content">
+                        <label>Hora de inicio</label>
+                        <span>{activity.hora}</span>
+                      </div>
+                    </div>
+                    <div className="info-item">
+                      <div className="info-icon">⏱️</div>
+                      <div className="info-content">
+                        <label>Duración</label>
+                        <span>{activity.duracion}</span>
+                      </div>
+                    </div>
+                    <div className="info-item">
+                      <div className="info-icon">👥</div>
+                      <div className="info-content">
+                        <label>Capacidad</label>
+                        <span>{activity.maxParticipantes} participantes</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {activity.requisitos && (
+                    <div className="requirements-section">
+                      <h3>Requisitos de Participación</h3>
+                      <p>{activity.requisitos}</p>
+                    </div>
+                  )}
+
+                  <div className="progress-section">
+                    <div className="progress-header">
+                      <span>Inscripciones</span>
+                      <span>{Math.round(progressPercentage)}%</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${progressPercentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="progress-text">
+                      {participantsCount} de {activity.maxParticipantes} cupos ocupados
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {activeTab === 'location' && (
+                <div className="tab-panel">
+                  <h3>📍 Ubicación del Evento</h3>
+                  <div className="location-card">
+                    <div className="location-icon">🏢</div>
+                    <div className="location-details">
+                      <h4>{activity.ubicacion}</h4>
+                      <p>Lugar donde se realizará la actividad</p>
+                    </div>
+                  </div>
+                  <div className="map-placeholder">
+                    <div className="map-icon">🗺️</div>
+                    <p>Mapa de ubicación disponible próximamente</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'reviews' && (
+                <div className="tab-panel">
+                  <div className="reviews-header">
+                    <h3>Reseñas y Calificaciones</h3>
+                    <div className="reviews-stats">
+                      <span className="reviews-count">{reviews.length} reseñas</span>
+                    </div>
+                  </div>
+
+                  {reviews.length > 0 ? (
+                    <div className="reviews-list">
+                      {reviews.map(review => (
+                        <div key={review._id} className="review-card">
+                          <div className="review-header">
+                            <div className="reviewer-info">
+                              <div className="reviewer-avatar">
+                                {review.usuario?.nombre?.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <strong>{review.usuario?.nombre}</strong>
+                                <div className="review-rating">
+                                  {'★'.repeat(review.calificacion)}
+                                  {'☆'.repeat(5 - review.calificacion)}
+                                </div>
+                              </div>
+                            </div>
+                            <span className="review-date">
+                              {new Date(review.fecha).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="review-comment">{review.comentario}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-reviews">
+                      <div className="no-reviews-icon">💬</div>
+                      <p>Aún no hay reseñas para esta actividad.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'organizer' && activity.creador && (
+                <div className="tab-panel">
+                  <div className="organizer-card">
+                    <h3>Información del Organizador</h3>
+                    <div className="organizer-info">
+                      <div className="organizer-avatar">
+                        {activity.creador.empresa?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="organizer-details">
+                        <h4>{activity.creador.empresa}</h4>
+                        <div className="organizer-contact">
+                          <div className="contact-item">
+                            <span className="contact-icon">📞</span>
+                            <a href={`tel:${activity.creador.telefono}`} className="contact-link">
+                              {activity.creador.telefono}
+                            </a>
+                          </div>
+                          <div className="contact-item">
+                            <span className="contact-icon">✉️</span>
+                            <a href={`mailto:${activity.creador.email}`} className="contact-link">
+                              {activity.creador.email}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar de acciones */}
+          <div className="activity-sidebar">
+            <div className="pricing-card">
+              <div className="pricing-header">
+                <div className="price-comparison">
+                  {activity.precioOriginal > activity.precioDescuento ? (
+                    <>
+                      <span className="original-price">${activity.precioOriginal?.toLocaleString()}</span>
+                      <span className="current-price">${activity.precioDescuento?.toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <span className="current-price solo">${activity.precioDescuento?.toLocaleString()}</span>
+                  )}
+                </div>
+                {savings > 0 && (
+                  <div className="savings-badge">
+                    Ahorras ${savings.toLocaleString()}
+                  </div>
+                )}
               </div>
 
-              <div className="d-grid gap-2">
+              <div className="action-buttons">
                 {!isRegistered ? (
                   <button
-                    className="btn btn-warning btn-lg"
+                    className={`btn-modern warning ${activity.estado !== 'aprobada' ? 'disabled' : ''}`}
                     onClick={handleRegister}
                     disabled={activity.estado !== 'aprobada'}
                   >
-                    🎯 Registrarse en la Actividad
+                    <span className="btn-icon">🎯</span>
+                    Registrarse en la Actividad
                   </button>
                 ) : (
-                  <button className="btn btn-outline-warning btn-lg" disabled>
-                    ✅ Ya estás registrado
+                  <button className="btn-modern warning-outline" disabled>
+                    <span className="btn-icon">✅</span>
+                    Ya estás registrado
                   </button>
                 )}
 
                 <button
-                  className="btn btn-primary btn-lg"
+                  className="btn-modern primary"
                   onClick={handleAddToCart}
                 >
-                  🛒 Agregar al Carrito
+                  <span className="btn-icon">🛒</span>
+                  Agregar al Carrito
                 </button>
 
                 <button
-                  className="btn btn-outline-primary"
+                  className="btn-modern outline"
                   onClick={() => navigate('/activities')}
                 >
-                  ← Volver a Actividades
+                  <span className="btn-icon">←</span>
+                  Volver a Actividades
                 </button>
               </div>
 
-              <div className="mt-4">
-                <div className="alert alert-info">
-                  <small>
-                    <strong>Estado:</strong> {activity.estado}<br />
-                    <strong>Participantes:</strong> {activity.participantes?.length || 0}<br />
-                    <strong>Cupos disponibles:</strong> {activity.maxParticipantes - (activity.participantes?.length || 0)}
-                  </small>
+              <div className="activity-meta">
+                <div className="meta-item">
+                  <span className="meta-label">Estado</span>
+                  <span className={`meta-value status-${activity.estado}`}>
+                    {activity.estado}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Participantes</span>
+                  <span className="meta-value">{participantsCount}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">Cupos disponibles</span>
+                  <span className="meta-value">{availableSpots}</span>
                 </div>
               </div>
             </div>

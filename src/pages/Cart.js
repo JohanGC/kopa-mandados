@@ -67,34 +67,39 @@ const Cart = () => {
     return (item.precioDescuento * item.quantity).toLocaleString();
   };
 
+  const getSavingsTotal = () => {
+    return cartItems.reduce((total, item) => 
+      total + ((item.precioOriginal - item.precioDescuento) * item.quantity), 0
+    ).toLocaleString();
+  };
+
   if (cartItems.length === 0) {
     return (
-      <div className="container mt-5">
-        <div className="row justify-content-center">
-          <div className="col-md-8">
-            <div className="card shadow">
-              <div className="card-header bg-primary text-white">
-                <h4 className="mb-0">🛒 Carrito de Compras</h4>
-              </div>
-              <div className="card-body text-center py-5">
-                <div className="mb-4">
-                  <span style={{ fontSize: '6rem' }}>🛒</span>
-                </div>
-                <h3 className="card-title mb-3">Tu carrito está vacío</h3>
-                <p className="card-text text-muted mb-4">
-                  Explora nuestras ofertas y actividades para agregar items a tu carrito.
-                </p>
-                <div className="d-grid gap-2 d-md-flex justify-content-md-center">
-                  <button 
-                    className="btn btn-primary btn-lg me-md-2"
-                    onClick={handleContinueShopping}
-                  >
-                    🏷️ Ver Ofertas
-                  </button>
-                  <Link to="/activities" className="btn btn-warning btn-lg">
-                    🎯 Ver Actividades
-                  </Link>
-                </div>
+      <div className="cart-modern">
+        <div className="cart-container">
+          <div className="empty-cart-card">
+            <div className="empty-cart-header">
+              
+              <h1 className="cart-title">Carrito de Compras</h1>
+            </div>
+            <div className="empty-cart-content">
+              <div className="empty-cart-icon">📭</div>
+              <h2 className="empty-title">Tu carrito está vacío</h2>
+              <p className="empty-description">
+                Explora nuestras ofertas y actividades para agregar items a tu carrito.
+              </p>
+              <div className="empty-actions">
+                <button 
+                  className="btn-modern primary"
+                  onClick={handleContinueShopping}
+                >
+                  
+                  Ver Ofertas
+                </button>
+                <Link to="/activities" className="btn-modern secondary">
+                  
+                  Ver Actividades
+                </Link>
               </div>
             </div>
           </div>
@@ -104,217 +109,199 @@ const Cart = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-12">
-          <div className="card shadow">
-            <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-              <h4 className="mb-0">🛒 Mi Carrito de Compras</h4>
-              <span className="badge bg-light text-primary fs-6">
+    <div className="cart-modern">
+      <div className="cart-container">
+        <div className="cart-card">
+          {/* Header del carrito */}
+          <div className="cart-header">
+            <div className="header-content">
+              <div className="cart-title-section">
+                <div className="cart-icon-main">🛒</div>
+                <div>
+                  <h1 className="cart-title">Mi Carrito de Compras</h1>
+                  <p className="cart-subtitle">{getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'} en tu carrito</p>
+                </div>
+              </div>
+              <div className="cart-badge">
                 {getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'}
-              </span>
+              </div>
             </div>
-            <div className="card-body">
-              {/* Resumen rápido */}
-              <div className="row mb-4">
-                <div className="col-md-3">
-                  <div className="card text-white bg-info">
-                    <div className="card-body text-center py-3">
-                      <h6 className="card-title">Total Items</h6>
-                      <h4 className="mb-0">{getTotalItems()}</h4>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="card text-white bg-success">
-                    <div className="card-body text-center py-3">
-                      <h6 className="card-title">Ahorro Total</h6>
-                      <h4 className="mb-0">
-                        ${cartItems.reduce((total, item) => 
-                          total + ((item.precioOriginal - item.precioDescuento) * item.quantity), 0
-                        ).toLocaleString()}
-                      </h4>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="card text-white bg-warning">
-                    <div className="card-body text-center py-3">
-                      <h6 className="card-title">Ofertas</h6>
-                      <h4 className="mb-0">
-                        {cartItems.filter(item => item.type === 'offer').length}
-                      </h4>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="card text-white bg-danger">
-                    <div className="card-body text-center py-3">
-                      <h6 className="card-title">Actividades</h6>
-                      <h4 className="mb-0">
-                        {cartItems.filter(item => item.type === 'activity').length}
-                      </h4>
-                    </div>
-                  </div>
+          </div>
+
+          <div className="cart-content">
+            {/* Estadísticas rápidas */}
+            <div className="stats-grid">
+              <div className="stat-card total-items">
+                <div className="stat-icon">📦</div>
+                <div className="stat-content">
+                  <div className="stat-number">{getTotalItems()}</div>
+                  <div className="stat-label">Total Items</div>
                 </div>
               </div>
-
-              {/* Lista de productos */}
-              <div className="table-responsive">
-                <table className="table table-hover">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Producto</th>
-                      <th>Precio</th>
-                      <th>Cantidad</th>
-                      <th>Subtotal</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cartItems.map(item => (
-                      <tr key={`${item.type}-${item._id}`}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <div className="me-3">
-                              <span style={{ fontSize: '2rem' }}>
-                                {item.type === 'activity' ? '🎯' : '🏷️'}
-                              </span>
-                            </div>
-                            <div>
-                              <h6 className="mb-1">{item.titulo}</h6>
-                              <small className="text-muted">
-                                {item.type === 'activity' ? 'Actividad' : 'Oferta'} • {item.categoria}
-                              </small>
-                              <div className="mt-1">
-                                <span className="badge bg-success me-1">
-                                  {item.descuento}% OFF
-                                </span>
-                                <span className={`badge ${item.type === 'activity' ? 'bg-info' : 'bg-primary'}`}>
-                                  {item.type === 'activity' ? 'Actividad' : 'Oferta'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div>
-                            <del className="text-muted small">
-                              ${item.precioOriginal?.toLocaleString()}
-                            </del>
-                            <div className="text-success fw-bold">
-                              ${item.precioDescuento?.toLocaleString()}
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <button
-                              className="btn btn-outline-secondary btn-sm"
-                              onClick={() => handleQuantityChange(item._id, item.type, item.quantity - 1)}
-                              disabled={item.quantity <= 1}
-                            >
-                              -
-                            </button>
-                            <span className="mx-3 fw-bold">{item.quantity}</span>
-                            <button
-                              className="btn btn-outline-secondary btn-sm"
-                              onClick={() => handleQuantityChange(item._id, item.type, item.quantity + 1)}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </td>
-                        <td>
-                          <strong className="text-primary">
-                            ${calculateItemTotal(item)}
-                          </strong>
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-outline-danger btn-sm"
-                            onClick={() => handleRemoveItem(item._id, item.type)}
-                            title="Eliminar del carrito"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Acciones y resumen */}
-              <div className="row mt-4">
-                <div className="col-md-8">
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={clearCart}
-                    >
-                      🗑️ Vaciar Carrito
-                    </button>
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={handleContinueShopping}
-                    >
-                      ← Continuar Comprando
-                    </button>
-                  </div>
+              <div className="stat-card savings">
+                <div className="stat-icon">💰</div>
+                <div className="stat-content">
+                  <div className="stat-number">${getSavingsTotal()}</div>
+                  <div className="stat-label">Ahorro Total</div>
                 </div>
-                <div className="col-md-4">
-                  <div className="card border-0 bg-light">
-                    <div className="card-body">
-                      <h5 className="card-title mb-3">Resumen de Compra</h5>
-                      
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Subtotal:</span>
-                        <span>${getTotalPrice().toLocaleString()}</span>
+              </div>
+              <div className="stat-card offers">
+                <div className="stat-icon">🏷️</div>
+                <div className="stat-content">
+                  <div className="stat-number">
+                    {cartItems.filter(item => item.type === 'offer').length}
+                  </div>
+                  <div className="stat-label">Ofertas</div>
+                </div>
+              </div>
+              <div className="stat-card activities">
+                <div className="stat-icon">🎯</div>
+                <div className="stat-content">
+                  <div className="stat-number">
+                    {cartItems.filter(item => item.type === 'activity').length}
+                  </div>
+                  <div className="stat-label">Actividades</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de productos */}
+            <div className="cart-items-section">
+              <h3 className="section-title">Items en el Carrito</h3>
+              <div className="cart-items-list">
+                {cartItems.map(item => (
+                  <div key={`${item.type}-${item._id}`} className="cart-item">
+                    <div className="item-image">
+                      <div className="item-icon">
+                        {item.type === 'activity' ? '🎯' : '🏷️'}
                       </div>
-                      
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Descuentos:</span>
-                        <span className="text-success">
-                          -${cartItems.reduce((total, item) => 
-                            total + ((item.precioOriginal - item.precioDescuento) * item.quantity), 0
-                          ).toLocaleString()}
+                    </div>
+                    <div className="item-details">
+                      <h4 className="item-title">{item.titulo}</h4>
+                      <div className="item-meta">
+                        <span className="item-category">{item.categoria}</span>
+                        <span className={`item-type ${item.type}`}>
+                          {item.type === 'activity' ? 'Actividad' : 'Oferta'}
                         </span>
+                        <span className="discount-badge">{item.descuento}% OFF</span>
                       </div>
-                      
-                      <div className="d-flex justify-content-between mb-2">
-                        <span>Envío:</span>
-                        <span className="text-success">Gratis</span>
+                    </div>
+                    <div className="item-pricing">
+                      <div className="price-comparison">
+                        <span className="original-price">${item.precioOriginal?.toLocaleString()}</span>
+                        <span className="current-price">${item.precioDescuento?.toLocaleString()}</span>
                       </div>
-                      
-                      <hr />
-                      
-                      <div className="d-flex justify-content-between mb-3">
-                        <strong>Total:</strong>
-                        <strong className="text-primary fs-5">
-                          ${getTotalPrice().toLocaleString()}
-                        </strong>
+                    </div>
+                    <div className="item-quantity">
+                      <div className="quantity-controls">
+                        <button
+                          className="quantity-btn"
+                          onClick={() => handleQuantityChange(item._id, item.type, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                        >
+                          −
+                        </button>
+                        <span className="quantity-value">{item.quantity}</span>
+                        <button
+                          className="quantity-btn"
+                          onClick={() => handleQuantityChange(item._id, item.type, item.quantity + 1)}
+                        >
+                          +
+                        </button>
                       </div>
-                      
+                    </div>
+                    <div className="item-total">
+                      <span className="total-price">${calculateItemTotal(item)}</span>
+                    </div>
+                    <div className="item-actions">
                       <button
-                        className="btn btn-success w-100 btn-lg"
-                        onClick={handleCheckout}
-                        disabled={loading}
+                        className="remove-btn"
+                        onClick={() => handleRemoveItem(item._id, item.type)}
+                        title="Eliminar del carrito"
                       >
-                        {loading ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            Procesando...
-                          </>
-                        ) : (
-                          '🎉 Proceder al Pago'
-                        )}
+                        🗑️
                       </button>
-                      
-                      <div className="mt-3 text-center">
-                        <small className="text-muted">
-                          💳 Pago seguro • 🔒 Datos protegidos • 🚚 Envío gratis
-                        </small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Acciones y resumen */}
+            <div className="cart-actions-section">
+              <div className="actions-grid">
+                <div className="cart-actions">
+                  <button
+                    className="btn-modern outline danger"
+                    onClick={clearCart}
+                  >
+                    <span className="btn-icon">🗑️</span>
+                    Vaciar Carrito
+                  </button>
+                  <button
+                    className="btn-modern outline"
+                    onClick={handleContinueShopping}
+                  >
+                    <span className="btn-icon">←</span>
+                    Continuar Comprando
+                  </button>
+                </div>
+                <div className="cart-summary">
+                  <div className="summary-card">
+                    <h3 className="summary-title">Resumen de Compra</h3>
+                    
+                    <div className="summary-row">
+                      <span>Subtotal:</span>
+                      <span>${getTotalPrice().toLocaleString()}</span>
+                    </div>
+                    
+                    <div className="summary-row discount">
+                      <span>Descuentos:</span>
+                      <span className="discount-amount">-${getSavingsTotal()}</span>
+                    </div>
+                    
+                    <div className="summary-row shipping">
+                      <span>Envío:</span>
+                      <span className="free-shipping">Gratis</span>
+                    </div>
+                    
+                    <div className="summary-divider"></div>
+                    
+                    <div className="summary-row total">
+                      <span>Total:</span>
+                      <span className="total-amount">${getTotalPrice().toLocaleString()}</span>
+                    </div>
+                    
+                    <button
+                      className="checkout-btn"
+                      onClick={handleCheckout}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <span className="button-spinner"></span>
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <span className="btn-icon">🎉</span>
+                          Proceder al Pago
+                        </>
+                      )}
+                    </button>
+                    
+                    <div className="security-features">
+                      <div className="security-item">
+                        <span className="security-icon">💳</span>
+                        <span>Pago seguro</span>
+                      </div>
+                      <div className="security-item">
+                        <span className="security-icon">🔒</span>
+                        <span>Datos protegidos</span>
+                      </div>
+                      <div className="security-item">
+                        <span className="security-icon">🚚</span>
+                        <span>Envío gratis</span>
                       </div>
                     </div>
                   </div>

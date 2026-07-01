@@ -49,122 +49,138 @@ const Login = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card shadow">
-            <div className="card-body p-5">
-              <h2 className="card-title text-center mb-4">Iniciar Sesión</h2>
-              
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
-              
-              {/* Botones de prueba rápido */}
-              <div className="mb-3">
-                <small className="text-muted">Login rápido para pruebas:</small>
-                <div className="btn-group w-100 mt-1">
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => handleQuickLogin('admin@kopamandados.com', '123456')}
-                    disabled={loading}
-                  >
-                    👑 Admin
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-info btn-sm"
-                    onClick={() => handleQuickLogin('carlos@usuario.com', '123456')}
-                    disabled={loading}
-                  >
-                    👤 Usuario
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-warning btn-sm"
-                    onClick={() => handleQuickLogin('juan@empresa.com', '123456')}
-                    disabled={loading}
-                  >
-                    🏢 Oferente
-                  </button>
-                </div>
+    <div className="login-modern">
+      <div className="login-container">
+        <div className="login-card">
+          {/* Header con gradiente */}
+          <div className="login-header">
+            <div className="login-icon">🔐</div>
+            <h1 className="login-title">Iniciar Sesión</h1>
+            <p className="login-subtitle">Accede a tu cuenta para descubrir experiencias únicas</p>
+          </div>
+
+          <div className="login-content">
+            {error && (
+              <div className="error-message">
+                <span className="error-icon">⚠️</span>
+                {error}
+              </div>
+            )}
+            
+            {/* Botones de prueba rápido */}
+            <div className="quick-login-section">
+              <p className="quick-login-label">Acceso rápido para pruebas:</p>
+              <div className="quick-login-grid">
+                <button 
+                  type="button" 
+                  className="quick-login-btn admin"
+                  onClick={() => handleQuickLogin('admin@kopamandados.com', '123456')}
+                  disabled={loading}
+                >
+                  <span className="btn-icon">👑</span>
+                  <span className="btn-text">Admin</span>
+                </button>
+                <button 
+                  type="button" 
+                  className="quick-login-btn user"
+                  onClick={() => handleQuickLogin('carlos@usuario.com', '123456')}
+                  disabled={loading}
+                >
+                  <span className="btn-icon">👤</span>
+                  <span className="btn-text">Usuario</span>
+                </button>
+                <button 
+                  type="button" 
+                  className="quick-login-btn oferente"
+                  onClick={() => handleQuickLogin('juan@empresa.com', '123456')}
+                  disabled={loading}
+                >
+                  <span className="btn-icon">🏢</span>
+                  <span className="btn-text">Oferente</span>
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="login-form">
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">
+                  <span className="label-icon">📧</span>
+                  Correo Electrónico
+                </label>
+                <input
+                  type="email"
+                  className="form-input"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="tu@email.com"
+                  required
+                  disabled={loading}
+                />
               </div>
 
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">Correo Electrónico</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="tu@email.com"
-                    required
-                    disabled={loading}
-                  />
-                </div>
+              <div className="form-group">
+                <label htmlFor="password" className="form-label">
+                  <span className="label-icon">🔒</span>
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  className="form-input"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Tu contraseña"
+                  required
+                  disabled={loading}
+                />
+              </div>
 
-                <div className="mb-3">
-                  <label htmlFor="password" className="form-label">Contraseña</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Tu contraseña"
-                    required
-                    disabled={loading}
-                  />
-                </div>
-
-                <div className="mb-3 form-check">
+              <div className="form-options">
+                <label className="checkbox-container">
                   <input 
                     type="checkbox" 
-                    className="form-check-input" 
+                    className="checkbox-input" 
                     id="remember" 
                     disabled={loading}
                   />
-                  <label className="form-check-label" htmlFor="remember">
-                    Recordarme
-                  </label>
-                </div>
-
-                <button 
-                  type="submit" 
-                  className="btn btn-primary w-100 mb-3"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                      Iniciando sesión...
-                    </>
-                  ) : (
-                    'Iniciar Sesión'
-                  )}
-                </button>
-
-                <div className="text-center">
-                  <a href="#!" className="text-decoration-none">¿Olvidaste tu contraseña?</a>
-                </div>
-              </form>
-
-              <hr className="my-4" />
-              
-              <div className="text-center">
-                <p>¿No tienes cuenta? 
-                  <Link to="/register" className="btn btn-link p-0 ms-1">
-                    Regístrate aquí
-                  </Link>
-                </p>
+                  <span className="checkbox-checkmark"></span>
+                  <span className="checkbox-label">Recordar sesión</span>
+                </label>
+                <a href="#!" className="forgot-password">¿Olvidaste tu contraseña?</a>
               </div>
+
+              <button 
+                type="submit" 
+                className="login-button"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span className="button-spinner"></span>
+                    Iniciando sesión...
+                  </>
+                ) : (
+                  <>
+                    <span className="button-icon">🚀</span>
+                    Iniciar Sesión
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="login-divider">
+              <span className="divider-text">¿Primera vez aquí?</span>
+            </div>
+            
+            <div className="register-section">
+              <p className="register-text">Únete a nuestra comunidad</p>
+              <Link to="/register" className="register-button">
+                <span className="button-icon">🌟</span>
+                Crear Cuenta Nueva
+              </Link>
             </div>
           </div>
         </div>

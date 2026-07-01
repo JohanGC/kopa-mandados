@@ -16,6 +16,7 @@ const OfferDetails = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isParticipating, setIsParticipating] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [activeTab, setActiveTab] = useState('details');
 
   useEffect(() => {
     fetchOfferDetails();
@@ -146,7 +147,6 @@ const OfferDetails = () => {
 
     if (!offer) return;
 
-    // Crear item para el carrito con la estructura correcta
     const cartItem = {
       _id: offer._id,
       titulo: offer.titulo,
@@ -156,7 +156,7 @@ const OfferDetails = () => {
       precioDescuento: offer.precioDescuento,
       descuento: offer.descuento,
       imagen: offer.imagen,
-      type: 'offer',  // Tipo específico para identificar en el carrito
+      type: 'offer',
       fechaInicio: offer.fechaInicio,
       fechaFin: offer.fechaFin,
       condiciones: offer.condiciones,
@@ -169,11 +169,10 @@ const OfferDetails = () => {
 
   if (loading) {
     return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
+      <div className="modern-loading">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Cargando oferta...</p>
         </div>
       </div>
     );
@@ -181,165 +180,273 @@ const OfferDetails = () => {
 
   if (!offer) {
     return (
-      <div className="container mt-4">
-        <div className="alert alert-danger">
-          <h4>Oferta no encontrada</h4>
+      <div className="modern-container">
+        <div className="error-state">
+          <div className="error-icon">😕</div>
+          <h2>Oferta no encontrada</h2>
           <p>La oferta que buscas no existe o ha sido eliminada.</p>
-          <Link to="/offers" className="btn btn-primary">Volver a ofertas</Link>
+          <Link to="/offers" className="btn-modern primary">
+            Volver a ofertas
+          </Link>
         </div>
       </div>
     );
   }
 
+  const savings = offer.precioOriginal - offer.precioDescuento;
+  const participantsCount = offer.participantes?.length || 0;
+  const availableSpots = offer.maxParticipantes ? (offer.maxParticipantes - participantsCount) : null;
+
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card shadow">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start mb-4">
-                <h1 className="card-title">{offer.titulo}</h1>
-                <button
-                  className={`btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}`}
-                  onClick={handleAddToFavorites}
-                  title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                >
-                  {isFavorite ? '❤️' : '🤍'}
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <img
-                  src={offer.imagen || '/images/placeholder-offer.jpg'}
-                  alt={offer.titulo}
-                  className="img-fluid rounded"
-                  style={{ maxHeight: '400px', width: '100%', objectFit: 'cover' }}
-                />
-              </div>
-
-              <div className="mb-4">
-                <h4>Descripción</h4>
-                <p className="lead">{offer.descripcion}</p>
-              </div>
-
-              <div className="row mb-4">
-                <div className="col-md-6">
-                  <h5>📅 Fechas</h5>
-                  <p>
-                    <strong>Inicio:</strong> {new Date(offer.fechaInicio).toLocaleDateString()}<br />
-                    <strong>Fin:</strong> {new Date(offer.fechaFin).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="col-md-6">
-                  <h5>📊 Información</h5>
-                  <p>
-                    <strong>Categoría:</strong> {offer.categoria}<br />
-                    <strong>Tipo:</strong> {offer.tipoOferta}<br />
-                    <strong>Participantes:</strong> {offer.participantes?.length || 0}/{offer.maxParticipantes || 'Ilimitado'}
-                  </p>
-                </div>
-              </div>
-
-              {offer.condiciones && (
-                <div className="mb-4">
-                  <h5>📝 Condiciones</h5>
-                  <p>{offer.condiciones}</p>
-                </div>
+    <div className="modern-container">
+      {/* Header de la oferta */}
+      <div className="offer-header">
+        <div className="breadcrumb">
+          <Link to="/offers" className="breadcrumb-link">Ofertas</Link>
+          <span className="breadcrumb-separator">/</span>
+          <span className="breadcrumb-current">{offer.titulo}</span>
+        </div>
+        
+        <div className="header-actions">
+          <button
+            className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+            onClick={handleAddToFavorites}
+            title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              {isFavorite ? (
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              ) : (
+                <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
               )}
+            </svg>
+          </button>
+        </div>
+      </div>
 
-              {offer.creador && (
-                <div className="card bg-light">
-                  <div className="card-body">
-                    <h6>🏢 Información del Oferente</h6>
-                    <p className="mb-1"><strong>Empresa:</strong> {offer.creador.empresa}</p>
-                    <p className="mb-1"><strong>Contacto:</strong> {offer.creador.telefono}</p>
-                    <p className="mb-0"><strong>Email:</strong> {offer.creador.email}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+      <div className="offer-layout">
+        {/* Contenido principal */}
+        <div className="offer-main">
+          {/* Imagen principal */}
+          <div className="offer-image-section">
+            <img
+              src={offer.imagen || '/images/placeholder-offer.jpg'}
+              alt={offer.titulo}
+              className="offer-image"
+            />
+            {offer.descuento > 0 && (
+              <div className="discount-badge">
+                -{offer.descuento}%
+              </div>
+            )}
           </div>
 
-          {/* Sección de Reseñas */}
-          <div className="card shadow mt-4">
-            <div className="card-body">
-              <h4>⭐ Reseñas y Calificaciones</h4>
-              {reviews.length > 0 ? (
-                reviews.map(review => (
-                  <div key={review._id} className="border-bottom pb-3 mb-3">
-                    <div className="d-flex justify-content-between">
-                      <strong>{review.usuario?.nombre}</strong>
-                      <div>
-                        {'⭐'.repeat(review.calificacion)}
-                        {'☆'.repeat(5 - review.calificacion)}
+          {/* Navegación por pestañas */}
+          <div className="tab-navigation">
+            <button 
+              className={`tab-btn ${activeTab === 'details' ? 'active' : ''}`}
+              onClick={() => setActiveTab('details')}
+            >
+              Detalles
+            </button>
+            <button 
+              className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reviews')}
+            >
+              Reseñas ({reviews.length})
+            </button>
+            <button 
+              className={`tab-btn ${activeTab === 'provider' ? 'active' : ''}`}
+              onClick={() => setActiveTab('provider')}
+            >
+              Oferente
+            </button>
+          </div>
+
+          {/* Contenido de pestañas */}
+          <div className="tab-content">
+            {activeTab === 'details' && (
+              <div className="tab-panel">
+                <h1 className="offer-title">{offer.titulo}</h1>
+                <p className="offer-description">{offer.descripcion}</p>
+
+                <div className="info-grid">
+                  <div className="info-item">
+                    <div className="info-icon">📅</div>
+                    <div className="info-content">
+                      <label>Fecha de inicio</label>
+                      <span>{new Date(offer.fechaInicio).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">⏰</div>
+                    <div className="info-content">
+                      <label>Fecha de fin</label>
+                      <span>{new Date(offer.fechaFin).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">📊</div>
+                    <div className="info-content">
+                      <label>Categoría</label>
+                      <span>{offer.categoria}</span>
+                    </div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-icon">🎯</div>
+                    <div className="info-content">
+                      <label>Tipo de oferta</label>
+                      <span>{offer.tipoOferta}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {offer.condiciones && (
+                  <div className="conditions-section">
+                    <h3>Condiciones</h3>
+                    <p>{offer.condiciones}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div className="tab-panel">
+                <div className="reviews-header">
+                  <h3>Reseñas y Calificaciones</h3>
+                  <div className="reviews-stats">
+                    <span className="reviews-count">{reviews.length} reseñas</span>
+                  </div>
+                </div>
+
+                {reviews.length > 0 ? (
+                  <div className="reviews-list">
+                    {reviews.map(review => (
+                      <div key={review._id} className="review-card">
+                        <div className="review-header">
+                          <div className="reviewer-info">
+                            <div className="reviewer-avatar">
+                              {review.usuario?.nombre?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <strong>{review.usuario?.nombre}</strong>
+                              <div className="review-rating">
+                                {'★'.repeat(review.calificacion)}
+                                {'☆'.repeat(5 - review.calificacion)}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="review-date">
+                            {new Date(review.fecha).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="review-comment">{review.comentario}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-reviews">
+                    <div className="no-reviews-icon">💬</div>
+                    <p>Aún no hay reseñas para esta oferta.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'provider' && offer.creador && (
+              <div className="tab-panel">
+                <div className="provider-card">
+                  <h3>Información del Oferente</h3>
+                  <div className="provider-info">
+                    <div className="provider-avatar">
+                      {offer.creador.empresa?.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="provider-details">
+                      <h4>{offer.creador.empresa}</h4>
+                      <div className="provider-contact">
+                        <div className="contact-item">
+                          <span className="contact-icon">📞</span>
+                          <span>{offer.creador.telefono}</span>
+                        </div>
+                        <div className="contact-item">
+                          <span className="contact-icon">✉️</span>
+                          <span>{offer.creador.email}</span>
+                        </div>
                       </div>
                     </div>
-                    <p className="mb-1">{review.comentario}</p>
-                    <small className="text-muted">
-                      {new Date(review.fecha).toLocaleDateString()}
-                    </small>
                   </div>
-                ))
-              ) : (
-                <p className="text-muted">Aún no hay reseñas para esta oferta.</p>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="col-md-4">
-          <div className="card shadow sticky-top" style={{ top: '20px' }}>
-            <div className="card-body">
-              <div className="text-center mb-4">
-                <h3 className="text-success">Precios</h3>
-                <div className="mb-2">
-                  <del className="text-muted h5">${offer.precioOriginal?.toLocaleString()}</del>
-                </div>
-                <div className="h2 text-success mb-0">${offer.precioDescuento?.toLocaleString()}</div>
-                <div className="text-warning h5">
-                  {offer.descuento}% DE DESCUENTO
-                </div>
+        {/* Sidebar de acciones */}
+        <div className="offer-sidebar">
+          <div className="pricing-card">
+            <div className="pricing-header">
+              <div className="price-comparison">
+                <span className="original-price">${offer.precioOriginal?.toLocaleString()}</span>
+                <span className="discount-price">${offer.precioDescuento?.toLocaleString()}</span>
               </div>
+              {savings > 0 && (
+                <div className="savings-badge">
+                  Ahorras ${savings.toLocaleString()}
+                </div>
+              )}
+            </div>
 
-              <div className="d-grid gap-2">
-                {!isParticipating ? (
-                  <button
-                    className="btn btn-success btn-lg"
-                    onClick={handleParticipate}
-                    disabled={offer.estado !== 'aprobada'}
-                  >
-                    🎯 Inscribirse en la Oferta
-                  </button>
-                ) : (
-                  <button className="btn btn-outline-success btn-lg" disabled>
-                    ✅ Ya estás inscrito
-                  </button>
-                )}
-
+            <div className="action-buttons">
+              {!isParticipating ? (
                 <button
-                  className="btn btn-primary btn-lg"
-                  onClick={handleAddToCart}
+                  className={`btn-modern success ${offer.estado !== 'aprobada' ? 'disabled' : ''}`}
+                  onClick={handleParticipate}
+                  disabled={offer.estado !== 'aprobada'}
                 >
-                  🛒 Agregar al Carrito
+                  <span className="btn-icon">🎯</span>
+                  Inscribirse en la Oferta
                 </button>
+              ) : (
+                <button className="btn-modern success-outline" disabled>
+                  <span className="btn-icon">✅</span>
+                  Ya estás inscrito
+                </button>
+              )}
 
-                <button
-                  className="btn btn-outline-primary"
-                  onClick={() => navigate('/offers')}
-                >
-                  ← Volver a Ofertas
-                </button>
+              <button
+                className="btn-modern primary"
+                onClick={handleAddToCart}
+              >
+                <span className="btn-icon">🛒</span>
+                Agregar al Carrito
+              </button>
+
+              <button
+                className="btn-modern outline"
+                onClick={() => navigate('/offers')}
+              >
+                <span className="btn-icon">←</span>
+                Volver a Ofertas
+              </button>
+            </div>
+
+            <div className="offer-meta">
+              <div className="meta-item">
+                <span className="meta-label">Estado</span>
+                <span className={`meta-value status-${offer.estado}`}>
+                  {offer.estado}
+                </span>
               </div>
-
-              <div className="mt-4">
-                <div className="alert alert-info">
-                  <small>
-                    <strong>Estado:</strong> {offer.estado}<br />
-                    <strong>Participantes:</strong> {offer.participantes?.length || 0}<br />
-                    <strong>Cupos disponibles:</strong> {offer.maxParticipantes ? (offer.maxParticipantes - (offer.participantes?.length || 0)) : 'Ilimitados'}
-                  </small>
+              <div className="meta-item">
+                <span className="meta-label">Participantes</span>
+                <span className="meta-value">{participantsCount}</span>
+              </div>
+              {availableSpots !== null && (
+                <div className="meta-item">
+                  <span className="meta-label">Cupos disponibles</span>
+                  <span className="meta-value">{availableSpots}</span>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

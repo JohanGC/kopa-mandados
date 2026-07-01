@@ -1,19 +1,44 @@
-// Header.js - VERSIÓN COMPLETAMENTE CORREGIDA
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+// Header.js - VERSIÓN CORREGIDA SIN DEPENDENCIA DE BOOTSTRAP JS
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import axios from 'axios';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser, logout } = useAuth();
   const { getTotalItems } = useCart();
   const [favoritesCount, setFavoritesCount] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
-  // ✅ CORREGIDO: Función simplificada y corregida
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Efecto para detectar scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const getApiUrl = () => {
-    // En desarrollo, usar directamente la URL del backend
     return process.env.REACT_APP_API_URL || 'http://localhost:5000';
   };
 
@@ -25,60 +50,6 @@ const Header = () => {
     }
   }, [currentUser]);
 
-  // ✅ CORREGIDO: Función principal mejorada
-  const fetchFavoritesCount = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token || !currentUser) {
-        setFavoritesCount(0);
-        return;
-      }
-
-      const API_BASE = getApiUrl();
-      // ✅ CORREGIDO: URL correcta - solo una vez /api
-      const url = `${API_BASE}/api/favorites/user`;
-      
-      console.log('🔍 Fetching favorites from:', url);
-      
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        timeout: 8000
-      });
-      
-      // ✅ CORREGIDO: Manejo seguro de la respuesta
-      let count = 0;
-      if (Array.isArray(response.data)) {
-        count = response.data.length;
-      } else if (response.data && response.data.count !== undefined) {
-        count = response.data.count;
-      } else if (response.data && response.data.favorites) {
-        count = response.data.favorites.length;
-      }
-      
-      console.log(`✅ Favorites count: ${count}`);
-      setFavoritesCount(count);
-    } catch (error) {
-      console.error('❌ Error fetching favorites count:', error);
-      
-      // ✅ CORREGIDO: Manejo específico de errores
-      if (error.response?.status === 404) {
-        console.log('⚠️ Ruta de favoritos no implementada aún');
-        setFavoritesCount(0);
-      } else if (error.response?.status === 401) {
-        console.log('🔐 No autorizado - token inválido');
-        setFavoritesCount(0);
-      } else if (error.code === 'NETWORK_ERROR' || error.message?.includes('Network Error')) {
-        console.log('🌐 Error de red - servidor no disponible');
-        setFavoritesCount(0);
-      } else {
-        setFavoritesCount(0);
-      }
-    }
-  };
-
-  // ✅ CORREGIDO: Función optimizada con estructura mejorada
   const fetchFavoritesCountOptimized = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -88,30 +59,48 @@ const Header = () => {
       }
 
       const API_BASE = getApiUrl();
-      
-      // ✅ PRIMERO intentar con la nueva ruta de contador
       try {
         const countResponse = await axios.get(`${API_BASE}/api/favorites/user/count`, {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
         });
-        
-        console.log('✅ Contador obtenido via /count:', countResponse.data.count);
         setFavoritesCount(countResponse.data.count || 0);
         return;
-        
       } catch (countError) {
-        // Si falla /count, intentar con la ruta original
         if (countError.response?.status === 404) {
-          console.log('🔄 Ruta /count no disponible, usando ruta original...');
           await fetchFavoritesCount();
         } else {
           throw countError;
         }
       }
-      
     } catch (error) {
-      console.error('❌ Error en fetch optimizado:', error);
+      console.error('Error fetching favorites:', error);
+      setFavoritesCount(0);
+    }
+  };
+
+  const fetchFavoritesCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !currentUser) return;
+
+      const API_BASE = getApiUrl();
+      const response = await axios.get(`${API_BASE}/api/favorites/user`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 8000
+      });
+      
+      let count = 0;
+      if (Array.isArray(response.data)) {
+        count = response.data.length;
+      } else if (response.data?.count !== undefined) {
+        count = response.data.count;
+      } else if (response.data?.favorites) {
+        count = response.data.favorites.length;
+      }
+      
+      setFavoritesCount(count);
+    } catch (error) {
       setFavoritesCount(0);
     }
   };
@@ -124,168 +113,274 @@ const Header = () => {
     };
 
     window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
-    
-    return () => {
-      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
-    };
+    return () => window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
   }, [currentUser]);
 
   const handleLogout = () => {
     logout();
     setFavoritesCount(0);
+    setIsDropdownOpen(false);
     navigate('/');
   };
 
-  // ✅ CORREGIDO: Renderizado seguro
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   const userRole = currentUser?.rol || '';
   const userName = currentUser?.nombre || 'Usuario';
 
+  const isActiveLink = (path) => {
+    return location.pathname === path;
+  };
+
   return (
-    <header className="fondo-header header-2 p-3">
+    <header className={`modern-header-black ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container">
-        <nav className="d-flex justify-content-between align-items-center">
-          <Link to="/">
+        <nav className="nav-container">
+          {/* Logo */}
+          <Link to="/" className="logo-container">
             <img className="logo" src='/images/logoKopa_w.png' alt="Kopa Logo" />
           </Link>
           
-          <div className="d-flex align-items-center">
-            <Link to="/" className="text-white mx-2 text-decoration-none nav-link-custom">Inicio</Link>
-            <Link to="/offers" className="text-white mx-2 text-decoration-none nav-link-custom">Ofertas</Link>
-            <Link to="/activities" className="text-white mx-2 text-decoration-none nav-link-custom">Actividades</Link>
-            <Link to="/orders" className="text-white mx-2 text-decoration-none nav-link-custom">🛵 Mandados</Link>
+          {/* Navegación Principal */}
+          <div className="main-nav">
+            <Link 
+              to="/" 
+              className={`nav-link ${isActiveLink('/') ? 'active' : ''}`}
+            >
+              Inicio
+            </Link>
+            <Link 
+              to="/offers" 
+              className={`nav-link ${isActiveLink('/offers') ? 'active' : ''}`}
+            >
+              Ofertas
+            </Link>
+            <Link 
+              to="/activities" 
+              className={`nav-link ${isActiveLink('/activities') ? 'active' : ''}`}
+            >
+              Actividades
+            </Link>
+            <Link 
+              to="/orders" 
+              className={`nav-link ${isActiveLink('/orders') ? 'active' : ''}`}
+            >
+              Mandados
+            </Link>
 
-            {/* Enlace directo al Panel de Domiciliario */}
             {userRole === 'domiciliario' && (
-              <Link to="/domiciliario" className="text-white mx-2 text-decoration-none nav-link-custom">
-                📊 Panel Domiciliario
+              <Link 
+                to="/domiciliario" 
+                className={`nav-link ${isActiveLink('/domiciliario') ? 'active' : ''}`}
+              >
+                Panel Domiciliario
               </Link>
             )}
+          </div>
 
-            {/* Icono del carrito */}
+          {/* Acciones del Usuario */}
+          <div className="user-actions">
+            {/* Carrito */}
             <button 
-              className="btn btn-header position-relative ms-3"
+              className="cart-btn-modern"
               onClick={() => navigate('/cart')}
-              title="Ver carrito"
+              title="Carrito"
             >
-              🛒 Carrito
-              {getTotalItems() > 0 && (
-                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                  {getTotalItems()}
-                </span>
-              )}
+              <span className="cart-icon-modern">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.4 5.2 16.4H17M17 13V16.4M9 19C9 19.6 8.6 20 8 20C7.4 20 7 19.6 7 19C7 18.4 7.4 18 8 18C8.6 18 9 18.4 9 19ZM17 19C17 19.6 16.6 20 16 20C15.4 20 15 19.6 15 19C15 18.4 15.4 18 16 18C16.6 18 17 18.4 17 19Z" 
+                    strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                {getTotalItems() > 0 && (
+                  <span className="cart-badge-modern">{getTotalItems()}</span>
+                )}
+              </span>
+              <span className="cart-text">Carrito</span>
             </button>
 
             {currentUser ? (
-              <div className="dropdown ms-3">
-                <button className="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  {userRole === 'administrador' ? '👑 ' : 
-                   userRole === 'oferente' ? '🏢 ' : 
-                   userRole === 'domiciliario' ? '🛵 ' : '👤 '}
-                  {userName}
+              <div className="dropdown-modern" ref={dropdownRef}>
+                <button 
+                  className={`dropdown-toggle-modern ${isDropdownOpen ? 'open' : ''}`}
+                  onClick={toggleDropdown}
+                  type="button"
+                >
+                  <div className="user-info">
+                    <div className="user-avatar-modern">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="user-details">
+                      <span className="user-name-modern">{userName}</span>
+                      <span className="user-role">
+                        {userRole === 'administrador' ? 'Administrador' :
+                         userRole === 'oferente' ? 'Oferente' :
+                         userRole === 'domiciliario' ? 'Domiciliario' : 'Usuario'}
+                      </span>
+                    </div>
+                    <svg 
+                      className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`} 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor"
+                    >
+                      <path d="M6 9l6 6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end">
-                  {/* Panel de Administración - Solo para admins */}
-                  {userRole === 'administrador' && (
-                    <>
-                      <li>
-                        <Link to="/admin" className="dropdown-item text-danger">
-                          👑 Panel de Administración
-                        </Link>
-                      </li>
-                      <li><hr className="dropdown-divider"/></li>
-                    </>
-                  )}
-                  
-                  {/* Mi Perfil - Para todos los usuarios */}
-                  <li>
-                    <Link to="/profile" className="dropdown-item">
-                      👤 Mi Perfil
-                    </Link>
-                  </li>
-                  
-                  {/* Opciones para Oferentes y Administradores */}
-                  {(userRole === 'oferente' || userRole === 'administrador') && (
-                    <>
-                      <li>
-                        <Link to="/my-offers" className="dropdown-item">
-                          🏷️ Mis Ofertas
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="/my-activities" className="dropdown-item">
-                          🎯 Mis Actividades
-                        </Link>
-                      </li>
-                      <li><hr className="dropdown-divider"/></li>
-                    </>
-                  )}
-                  
-                  {/* Opciones para Domiciliarios */}
-                  {userRole === 'domiciliario' && (
-                    <>
-                      <li>
-                        <Link to="/domiciliario" className="dropdown-item">
-                          🛵 Panel de Domiciliario
-                        </Link>
-                      </li>
-                      <li>
-                        <Link to="/my-orders" className="dropdown-item">
-                          📋 Mis Mandados
-                        </Link>
-                      </li>
-                      <li><hr className="dropdown-divider"/></li>
-                    </>
-                  )}
-
-                  {/* Agrega esta sección para todos los usuarios que no sean domiciliarios */}
-                  {userRole !== 'domiciliario' && (
+                {isDropdownOpen && (
+                  <ul className="dropdown-menu-modern">
+                    {/* Panel de Administración */}
+                    {userRole === 'administrador' && (
+                      <>
+                        <li>
+                          <Link 
+                            to="/admin" 
+                            className="dropdown-item-modern admin-item"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <span className="dropdown-icon">👑</span>
+                            Panel de Administración
+                          </Link>
+                        </li>
+                        <li><hr className="dropdown-divider-modern"/></li>
+                      </>
+                    )}
+                    
+                    {/* Mi Perfil */}
                     <li>
-                      <Link to="/my-orders" className="dropdown-item">
-                        📦 Mis Mandados
+                      <Link 
+                        to="/profile" 
+                        className="dropdown-item-modern"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <span className="dropdown-icon">👤</span>
+                        Mi Perfil
                       </Link>
                     </li>
-                  )}
-                  
-                  {/* Favoritos con contador */}
-                  <li>
-                    <Link to="/favorites" className="dropdown-item position-relative">
-                      ❤️ Mis Favoritos
-                      {favoritesCount > 0 && (
-                        <span className="position-absolute top-50 end-0 translate-middle-y badge rounded-pill bg-danger me-2">
-                          {favoritesCount}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
+                    
+                    {/* Opciones para Oferentes y Administradores */}
+                    {(userRole === 'oferente' || userRole === 'administrador') && (
+                      <>
+                        <li>
+                          <Link 
+                            to="/my-offers" 
+                            className="dropdown-item-modern"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <span className="dropdown-icon">🏷️</span>
+                            Mis Ofertas
+                          </Link>
+                        </li>
+                        <li>
+                          <Link 
+                            to="/my-activities" 
+                            className="dropdown-item-modern"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <span className="dropdown-icon">🎯</span>
+                            Mis Actividades
+                          </Link>
+                        </li>
+                        <li><hr className="dropdown-divider-modern"/></li>
+                      </>
+                    )}
+                    
+                    {/* Opciones para Domiciliarios */}
+                    {userRole === 'domiciliario' && (
+                      <>
+                        <li>
+                          <Link 
+                            to="/domiciliario" 
+                            className="dropdown-item-modern"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <span className="dropdown-icon">🛵</span>
+                            Panel de Domiciliario
+                          </Link>
+                        </li>
+                        <li>
+                          <Link 
+                            to="/my-orders" 
+                            className="dropdown-item-modern"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <span className="dropdown-icon">📋</span>
+                            Mis Mandados
+                          </Link>
+                        </li>
+                        <li><hr className="dropdown-divider-modern"/></li>
+                      </>
+                    )}
 
-                  <li>
-                    <Link to="/settings" className="dropdown-item">
-                      ⚙️ Configuración
-                    </Link>
-                  </li>
-                  
-                  <li><hr className="dropdown-divider"/></li>
-                  
-                  {/* Cerrar Sesión */}
-                  <li>
-                    <button 
-                      className="dropdown-item text-danger" 
-                      onClick={handleLogout}
-                    >
-                      🚪 Cerrar Sesión
-                    </button>
-                  </li>
-                </ul>
+                    {/* Mis Mandados para todos los usuarios */}
+                    {userRole !== 'domiciliario' && (
+                      <li>
+                        <Link 
+                          to="/my-orders" 
+                          className="dropdown-item-modern"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <span className="dropdown-icon">📦</span>
+                          Mis Mandados
+                        </Link>
+                      </li>
+                    )}
+                    
+                    {/* Favoritos */}
+                    <li>
+                      <Link 
+                        to="/favorites" 
+                        className="dropdown-item-modern"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <span className="dropdown-icon">❤️</span>
+                        Mis Favoritos
+                        {favoritesCount > 0 && (
+                          <span className="favorites-badge-modern">{favoritesCount}</span>
+                        )}
+                      </Link>
+                    </li>
+
+                    {/* Configuración */}
+                    <li>
+                      <Link 
+                        to="/settings" 
+                        className="dropdown-item-modern"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <span className="dropdown-icon">⚙️</span>
+                        Configuración
+                      </Link>
+                    </li>
+                    
+                    <li><hr className="dropdown-divider-modern"/></li>
+                    
+                    {/* Cerrar Sesión */}
+                    <li>
+                      <button 
+                        className="dropdown-item-modern logout-item" 
+                        onClick={handleLogout}
+                      >
+                        <span className="dropdown-icon">🚪</span>
+                        Cerrar Sesión
+                      </button>
+                    </li>
+                  </ul>
+                )}
               </div>
             ) : (
-              <>
-                <Link to="/login" className="btn btn-outline-light ms-3">
-                  🔑 Iniciar Sesión
+              <div className="auth-buttons-modern">
+                <Link to="/login" className="auth-btn-modern login-btn-modern">
+                  Iniciar Sesión
                 </Link>
-                <Link to="/register" className="btn btn-primary ms-2">
-                  📝 Registrarse
+                <Link to="/register" className="auth-btn-modern register-btn-modern">
+                  Registrarse
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </nav>

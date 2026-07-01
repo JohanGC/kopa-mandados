@@ -1,10 +1,9 @@
-// pages/MyOrders.js
+// pages/MyOrders.js - VERSIÓN MODERNA
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import axios from 'axios';
-import useWebSocket from '../hooks/useWebSocket';
 
 const MyOrders = () => {
   const { currentUser } = useAuth();
@@ -33,15 +32,14 @@ const MyOrders = () => {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry`;
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      console.log('✅ Google Maps cargado en MyOrders');
       setMapsLoaded(true);
     };
     script.onerror = () => {
-      console.error('❌ Error cargando Google Maps');
+      console.error('Error cargando Google Maps');
     };
     document.head.appendChild(script);
   };
@@ -55,7 +53,6 @@ const MyOrders = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Filtrar órdenes del usuario actual
       const myOrders = response.data.filter(order => 
         order.solicitante && order.solicitante._id === currentUser._id
       );
@@ -69,23 +66,16 @@ const MyOrders = () => {
     }
   };
 
-  const getStatusBadge = (estado) => {
+  const getStatusConfig = (estado) => {
     const statusConfig = {
-      pendiente: { label: 'Pendiente', class: 'warning', icon: '⏳' },
-      aceptado: { label: 'Aceptado', class: 'info', icon: '👍' },
-      en_camino: { label: 'En camino', class: 'primary', icon: '🛵' },
-      en_proceso: { label: 'En proceso', class: 'info', icon: '📦' },
-      completado: { label: 'Completado', class: 'success', icon: '✅' },
-      cancelado: { label: 'Cancelado', class: 'danger', icon: '❌' }
+      pendiente: { label: 'Pendiente', color: 'warning', icon: '⏳' },
+      aceptado: { label: 'Aceptado', color: 'info', icon: '👍' },
+      en_camino: { label: 'En camino', color: 'primary', icon: '🛵' },
+      en_proceso: { label: 'En proceso', color: 'info', icon: '📦' },
+      completado: { label: 'Completado', color: 'success', icon: '✅' },
+      cancelado: { label: 'Cancelado', color: 'error', icon: '❌' }
     };
-
-    const config = statusConfig[estado] || statusConfig.pendiente;
-    return (
-      <span className={`badge bg-${config.class} d-flex align-items-center`}>
-        <span className="me-1">{config.icon}</span>
-        {config.label}
-      </span>
-    );
+    return statusConfig[estado] || statusConfig.pendiente;
   };
 
   const getCategoryIcon = (categoria) => {
@@ -110,50 +100,26 @@ const MyOrders = () => {
     return order.estado === filter;
   });
 
-  // Componente para mostrar el mapa de seguimiento - VERSIÓN CORREGIDA
+  // Componente para mostrar el mapa de seguimiento
   const OrderTrackingMap = ({ order, domiciliario }) => {
     const mapRef = useRef(null);
     const [map, setMap] = useState(null);
     const [mapInitialized, setMapInitialized] = useState(false);
-    const [domiciliarioLocation, setDomiciliarioLocation] = useState(null);
 
     useEffect(() => {
-      if (domiciliario?.ubicacionActual) {
-        setDomiciliarioLocation({
-          lat: domiciliario.ubicacionActual.lat,
-          lng: domiciliario.ubicacionActual.lng
-        });
+      if (mapsLoaded && order && !mapInitialized) {
+        const timer = setTimeout(() => {
+          initializeMap();
+        }, 100);
+        return () => clearTimeout(timer);
       }
-    }, [domiciliario]);
-
-    // Inicializar mapa cuando el componente esté montado y los datos listos
-    useEffect(() => {
-      if (!mapsLoaded || !order || mapInitialized) return;
-
-      // Pequeño delay para asegurar que el DOM esté listo
-      const timer = setTimeout(() => {
-        initializeMap();
-      }, 100);
-
-      return () => clearTimeout(timer);
     }, [mapsLoaded, order, mapInitialized]);
 
     const initializeMap = () => {
-      if (!mapRef.current) {
-        console.error('❌ mapRef.current no está disponible');
-        return;
-      }
-
-      if (!window.google || !window.google.maps) {
-        console.error('❌ Google Maps no está disponible');
-        return;
-      }
+      if (!mapRef.current || !window.google?.maps) return;
 
       try {
-        console.log('🗺️ Inicializando mapa para orden:', order._id);
-        
-        // Ubicación por defecto o del domiciliario
-        const defaultLocation = domiciliarioLocation || 
+        const defaultLocation = domiciliario?.ubicacionActual || 
           (order.coordenadasEntrega ? order.coordenadasEntrega : { lat: 4.6097, lng: -74.0817 });
         
         const mapInstance = new window.google.maps.Map(mapRef.current, {
@@ -180,93 +146,61 @@ const MyOrders = () => {
           new window.google.maps.Marker({
             position: order.coordenadasEntrega,
             map: mapInstance,
-            title: '📍 Punto de entrega',
+            title: 'Punto de entrega',
             icon: {
               url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMyOGE3NDUiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
               scaledSize: new window.google.maps.Size(25, 25),
-              anchor: new window.google.maps.Point(12.5, 12.5)
             }
           });
         }
 
         // Marcador del domiciliario
-        if (domiciliarioLocation) {
+        if (domiciliario?.ubicacionActual) {
           new window.google.maps.Marker({
-            position: domiciliarioLocation,
+            position: domiciliario.ubicacionActual,
             map: mapInstance,
-            title: `🛵 ${domiciliario?.nombre || 'Domiciliario'}`,
+            title: `Domiciliario: ${domiciliario?.nombre}`,
             icon: {
               url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiNmZjY2MDAiLz4KPHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxMy4xN2w3LjU5LTcuNTlMMTkgN2wtOSA5eiIvPjwvc3ZnPgo8L3N2Zz4=',
               scaledSize: new window.google.maps.Size(25, 25),
-              anchor: new window.google.maps.Point(12.5, 12.5)
             }
           });
 
-          // Ajustar vista para mostrar ambos puntos
           if (order.coordenadasEntrega) {
             const bounds = new window.google.maps.LatLngBounds();
-            bounds.extend(domiciliarioLocation);
+            bounds.extend(domiciliario.ubicacionActual);
             bounds.extend(order.coordenadasEntrega);
             mapInstance.fitBounds(bounds);
           }
         }
 
-        console.log('✅ Mapa inicializado correctamente');
-
       } catch (error) {
-        console.error('❌ Error inicializando mapa:', error);
+        console.error('Error inicializando mapa:', error);
       }
     };
 
-    // Re-inicializar mapa cuando cambia la ubicación del domiciliario
-    useEffect(() => {
-      if (map && domiciliarioLocation) {
-        // Aquí podrías actualizar la posición del marcador del domiciliario
-        // Por simplicidad, re-inicializamos el mapa
-        setMapInitialized(false);
-        setTimeout(() => {
-          initializeMap();
-        }, 500);
-      }
-    }, [domiciliarioLocation]);
-
     if (!mapsLoaded) {
       return (
-        <div className="text-center py-4">
-          <div className="spinner-border spinner-border-sm text-primary" role="status">
-            <span className="visually-hidden">Cargando mapa...</span>
-          </div>
-          <small className="text-muted d-block mt-2">Cargando mapa...</small>
+        <div className="map-loading">
+          <div className="loading-spinner small"></div>
+          <span>Cargando mapa...</span>
         </div>
       );
     }
 
     if (!process.env.REACT_APP_GOOGLE_MAPS_API_KEY) {
       return (
-        <div className="text-center py-4 bg-light rounded">
-          <small className="text-muted">
-            🔧 Mapa no disponible - Configura la API Key de Google Maps
-          </small>
+        <div className="map-placeholder">
+          <span>🔧 Mapa no disponible</span>
         </div>
       );
     }
 
     return (
-      <div className="mt-3">
-        <div 
-          ref={mapRef}
-          style={{ 
-            height: '200px', 
-            width: '100%',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px',
-            border: '1px solid #dee2e6'
-          }}
-        />
-        <div className="mt-2 text-center">
-          <small className="text-muted">
-            {domiciliarioLocation ? '📍 Seguimiento en tiempo real' : '⏳ Esperando ubicación del domiciliario'}
-          </small>
+      <div className="tracking-map-container">
+        <div ref={mapRef} className="tracking-map" />
+        <div className="map-status">
+          {domiciliario?.ubicacionActual ? '📍 Seguimiento en tiempo real' : '⏳ Esperando ubicación'}
         </div>
       </div>
     );
@@ -300,137 +234,132 @@ const MyOrders = () => {
       fetchDomiciliario();
     }, [order.ejecutante]);
 
+    const getVehicleIcon = (tipo) => {
+      const icons = {
+        moto: '🏍️',
+        bicicleta: '🚲',
+        carro: '🚗',
+        caminando: '🚶'
+      };
+      return icons[tipo] || '🚗';
+    };
+
     return (
-      <div className="card mt-3 border-primary">
-        <div className="card-body">
-          <div className="row">
-            {/* Información del Domiciliario */}
-            <div className="col-md-6">
-              <h6 className="text-primary mb-3">🛵 Información del Domiciliario</h6>
-              
-              {loadingDomiciliario ? (
-                <div className="text-center">
-                  <div className="spinner-border spinner-border-sm text-primary" role="status">
-                    <span className="visually-hidden">Cargando...</span>
+      <div className="expanded-details">
+        <div className="details-grid">
+          {/* Información del Domiciliario */}
+          <div className="detail-section">
+            <h4>Información del Domiciliario</h4>
+            
+            {loadingDomiciliario ? (
+              <div className="loading-state">
+                <div className="loading-spinner small"></div>
+                <span>Cargando información...</span>
+              </div>
+            ) : domiciliario ? (
+              <div className="domiciliario-card">
+                <div className="domiciliario-header">
+                  <div className="domiciliario-avatar">
+                    {domiciliario.nombre?.charAt(0).toUpperCase()}
                   </div>
-                  <small className="text-muted d-block mt-2">Cargando información...</small>
+                  <div className="domiciliario-info">
+                    <h5>{domiciliario.nombre}</h5>
+                    <div className={`status-badge ${domiciliario.disponible ? 'available' : 'busy'}`}>
+                      {domiciliario.disponible ? '🟢 Disponible' : '🟡 Ocupado'}
+                    </div>
+                  </div>
                 </div>
-              ) : domiciliario ? (
-                <div className="domiciliario-info">
-                  <div className="mb-2">
-                    <strong>Nombre:</strong> {domiciliario.nombre}
-                  </div>
-                  <div className="mb-2">
-                    <strong>Teléfono:</strong> 
-                    <a href={`tel:${domiciliario.telefono}`} className="ms-2 text-decoration-none">
-                      📞 {domiciliario.telefono}
+                
+                <div className="domiciliario-details">
+                  <div className="detail-item">
+                    <span className="detail-icon">📞</span>
+                    <a href={`tel:${domiciliario.telefono}`} className="detail-link">
+                      {domiciliario.telefono}
                     </a>
                   </div>
-                  <div className="mb-2">
-                    <strong>Vehículo:</strong> 
-                    <span className="ms-2">
-                      {domiciliario.tipoVehiculo === 'moto' && '🏍️ Moto'}
-                      {domiciliario.tipoVehiculo === 'bicicleta' && '🚲 Bicicleta'}
-                      {domiciliario.tipoVehiculo === 'carro' && '🚗 Carro'}
-                      {domiciliario.tipoVehiculo === 'caminando' && '🚶 Caminando'}
-                      {!domiciliario.tipoVehiculo && 'No especificado'}
-                    </span>
+                  <div className="detail-item">
+                    <span className="detail-icon">{getVehicleIcon(domiciliario.tipoVehiculo)}</span>
+                    <span>{domiciliario.tipoVehiculo || 'No especificado'}</span>
                   </div>
-                  <div className="mb-2">
-                    <strong>Placa:</strong> 
-                    <span className="ms-2">{domiciliario.placaVehiculo || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <strong>Estado:</strong>
-                    <span className={`badge ${domiciliario.disponible ? 'bg-success' : 'bg-warning'} ms-2`}>
-                      {domiciliario.disponible ? '🟢 Disponible' : '🟡 Ocupado'}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-muted py-3">
-                  <div className="fs-4">⏳</div>
-                  <p className="mb-0">Esperando que un domiciliario acepte el mandado</p>
-                </div>
-              )}
-            </div>
-
-            {/* Mapa de Seguimiento */}
-            <div className="col-md-6">
-              <h6 className="text-primary mb-3">🗺️ Seguimiento en Tiempo Real</h6>
-              <OrderTrackingMap order={order} domiciliario={domiciliario} />
-            </div>
-          </div>
-
-          {/* Información Detallada del Mandado */}
-          <div className="row mt-4">
-            <div className="col-12">
-              <h6 className="text-primary mb-3">📦 Detalles del Mandado</h6>
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="mb-2">
-                    <strong>Descripción completa:</strong>
-                    <p className="mb-0 text-muted">{order.descripcion}</p>
-                  </div>
-                  {order.notasAdicionales && (
-                    <div className="mb-2">
-                      <strong>Notas adicionales:</strong>
-                      <p className="mb-0 text-muted">{order.notasAdicionales}</p>
+                  {domiciliario.placaVehiculo && (
+                    <div className="detail-item">
+                      <span className="detail-icon">🔢</span>
+                      <span>{domiciliario.placaVehiculo}</span>
                     </div>
                   )}
                 </div>
-                <div className="col-md-6">
-                  <div className="mb-2">
-                    <strong>📍 Recogida:</strong> 
-                    <span className="text-muted"> {order.ubicacionRecogida}</span>
-                  </div>
-                  <div className="mb-2">
-                    <strong>🎯 Entrega:</strong> 
-                    <span className="text-muted"> {order.ubicacionEntrega}</span>
-                  </div>
-                  <div className="mb-2">
-                    <strong>⏰ Fecha límite:</strong> 
-                    <span className="text-muted"> {new Date(order.fechaLimite).toLocaleString()}</span>
-                  </div>
-                  <div className="mb-2">
-                    <strong>💰 Precio:</strong> 
-                    <span className="text-success fw-bold ms-2">
-                      ${order.precioOfertado?.toLocaleString()}
-                    </span>
-                  </div>
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">⏳</div>
+                <p>Esperando que un domiciliario acepte el mandado</p>
+              </div>
+            )}
+          </div>
+
+          {/* Mapa de Seguimiento */}
+          <div className="detail-section">
+            <h4>Seguimiento en Tiempo Real</h4>
+            <OrderTrackingMap order={order} domiciliario={domiciliario} />
+          </div>
+        </div>
+
+        {/* Información Detallada del Mandado */}
+        <div className="detail-section">
+          <h4>Detalles del Mandado</h4>
+          <div className="order-details-grid">
+            <div className="detail-column">
+              <div className="detail-group">
+                <label>Descripción completa</label>
+                <p>{order.descripcion}</p>
+              </div>
+              {order.notasAdicionales && (
+                <div className="detail-group">
+                  <label>Notas adicionales</label>
+                  <p>{order.notasAdicionales}</p>
                 </div>
+              )}
+            </div>
+            <div className="detail-column">
+              <div className="detail-group">
+                <label>📍 Recogida</label>
+                <span>{order.ubicacionRecogida}</span>
+              </div>
+              <div className="detail-group">
+                <label>🎯 Entrega</label>
+                <span>{order.ubicacionEntrega}</span>
+              </div>
+              <div className="detail-group">
+                <label>⏰ Fecha límite</label>
+                <span>{new Date(order.fechaLimite).toLocaleString()}</span>
+              </div>
+              <div className="detail-group">
+                <label>💰 Precio</label>
+                <span className="price">${order.precioOfertado?.toLocaleString()}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Acciones */}
-          <div className="row mt-4">
-            <div className="col-12">
-              <div className="d-flex gap-2 flex-wrap">
-                <Link 
-                  to={`/order/${order._id}`} 
-                  className="btn btn-outline-primary btn-sm"
-                >
-                  📋 Ver detalles completos
-                </Link>
-                {order.ejecutante && order.estado !== 'completado' && order.estado !== 'cancelado' && (
-                  <Link 
-                    to={`/order-tracking/${order._id}`} 
-                    className="btn btn-primary btn-sm"
-                  >
-                    🛵 Seguimiento avanzado
-                  </Link>
-                )}
-                {domiciliario && (
-                  <button 
-                    className="btn btn-success btn-sm"
-                    onClick={() => window.open(`tel:${domiciliario.telefono}`)}
-                  >
-                    📞 Llamar al domiciliario
-                  </button>
-                )}
-              </div>
-            </div>
+        {/* Acciones */}
+        <div className="actions-section">
+          <div className="action-buttons">
+            <Link to={`/order/${order._id}`} className="btn-modern outline">
+              📋 Ver detalles completos
+            </Link>
+            {order.ejecutante && order.estado !== 'completado' && order.estado !== 'cancelado' && (
+              <Link to={`/order-tracking/${order._id}`} className="btn-modern primary">
+                🛵 Seguimiento avanzado
+              </Link>
+            )}
+            {domiciliario && (
+              <button 
+                className="btn-modern success"
+                onClick={() => window.open(`tel:${domiciliario.telefono}`)}
+              >
+                📞 Llamar al domiciliario
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -446,97 +375,98 @@ const MyOrders = () => {
 
   if (loading) {
     return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="mt-2">Cargando tus mandados...</p>
+      <div className="modern-loading">
+        <div className="loading-content">
+          <div className="loading-spinner"></div>
+          <p>Cargando tus mandados...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>📦 Mis Mandados</h2>
-        <Link to="/create-order" className="btn btn-primary">
-          + Crear Nuevo Mandado
+     <div className="main-content"> {/* ← Agrega esta línea */}
+    <div className="modern-container">
+      {/* Header */}
+      <div className="page-header">
+        <div className="header-content">
+          <h1>Mis Mandados</h1>
+          <p>Gestiona y da seguimiento a tus mandados activos</p>
+        </div>
+        <Link to="/create-order" className="btn-modern primary">
+          <span className="btn-icon">+</span>
+          Crear Nuevo Mandado
         </Link>
       </div>
 
       {/* Filtros */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-8">
-              <div className="btn-group" role="group">
-                <button
-                  type="button"
-                  className={`btn btn-outline-primary ${filter === 'todos' ? 'active' : ''}`}
-                  onClick={() => setFilter('todos')}
-                >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-outline-primary ${filter === 'activos' ? 'active' : ''}`}
-                  onClick={() => setFilter('activos')}
-                >
-                  Activos
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-outline-primary ${filter === 'completados' ? 'active' : ''}`}
-                  onClick={() => setFilter('completados')}
-                >
-                  Completados
-                </button>
-              </div>
-            </div>
-            <div className="col-md-4 text-end">
-              <small className="text-muted">
-                {filteredOrders.length} de {orders.length} mandados
-              </small>
-            </div>
-          </div>
+      <div className="filters-section">
+        <div className="filter-tabs">
+          <button
+            className={`filter-tab ${filter === 'todos' ? 'active' : ''}`}
+            onClick={() => setFilter('todos')}
+          >
+            Todos
+          </button>
+          <button
+            className={`filter-tab ${filter === 'activos' ? 'active' : ''}`}
+            onClick={() => setFilter('activos')}
+          >
+            Activos
+          </button>
+          <button
+            className={`filter-tab ${filter === 'completados' ? 'active' : ''}`}
+            onClick={() => setFilter('completados')}
+          >
+            Completados
+          </button>
+        </div>
+        <div className="orders-count">
+          {filteredOrders.length} de {orders.length} mandados
         </div>
       </div>
 
+      {/* Lista de Mandados */}
       {filteredOrders.length === 0 ? (
-        <div className="text-center py-5">
-          <div className="fs-1 mb-3">📦</div>
-          <h4>No hay mandados</h4>
-          <p className="text-muted">
+        <div className="empty-state large">
+          <div className="empty-icon">📦</div>
+          <h3>No hay mandados</h3>
+          <p>
             {filter !== 'todos' 
               ? `No tienes mandados ${filter}.`
               : "Aún no has creado ningún mandado."
             }
           </p>
           {filter === 'todos' && (
-            <Link to="/create-order" className="btn btn-primary">
+            <Link to="/create-order" className="btn-modern primary">
               Crear mi primer mandado
             </Link>
           )}
         </div>
       ) : (
-        <div className="row">
-          {filteredOrders.map(order => (
-            <div key={order._id} className="col-12 mb-4">
-              <div className="card h-100">
-                <div className="card-header d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center">
-                    {getCategoryIcon(order.categoria)} 
-                    <strong className="ms-2">{order.categoria}</strong>
-                    <span className="ms-3 text-muted">
-                      #{order._id.slice(-6).toUpperCase()}
+        <div className="orders-grid">
+          {filteredOrders.map(order => {
+            const statusConfig = getStatusConfig(order.estado);
+            
+            return (
+              <div key={order._id} className="order-card">
+                <div className="order-header">
+                  <div className="order-title">
+                    <span className="category-icon">
+                      {getCategoryIcon(order.categoria)}
                     </span>
+                    <div className="order-info">
+                      <h3>{order.categoria}</h3>
+                      <span className="order-id">#{order._id.slice(-6).toUpperCase()}</span>
+                    </div>
                   </div>
-                  <div className="d-flex align-items-center gap-2">
-                    {getStatusBadge(order.estado)}
+                  <div className="order-actions">
+                    <div className={`status-badge ${statusConfig.color}`}>
+                      <span className="status-icon">{statusConfig.icon}</span>
+                      {statusConfig.label}
+                    </div>
                     <button 
-                      className="btn btn-sm btn-outline-primary"
+                      className="expand-btn"
                       onClick={() => toggleOrderExpansion(order._id)}
                     >
                       {expandedOrder === order._id ? '▲' : '▼'}
@@ -544,65 +474,53 @@ const MyOrders = () => {
                   </div>
                 </div>
                 
-                <div className="card-body">
-                  <div className="row">
-                    <div className="col-md-8">
-                      <h6 className="card-title">{order.descripcion}</h6>
-                      <div className="row mt-2">
-                        <div className="col-sm-6">
-                          <small className="text-muted">
-                            <strong>💰 Precio:</strong> ${order.precioOfertado?.toLocaleString()}
-                          </small>
-                        </div>
-                        <div className="col-sm-6">
-                          <small className="text-muted">
-                            <strong>🎯 Entrega:</strong> {order.ubicacionEntrega}
-                          </small>
-                        </div>
+                <div className="order-content">
+                  <div className="order-details">
+                    <h4>{order.descripcion}</h4>
+                    <div className="order-meta">
+                      <div className="meta-item">
+                        <span className="meta-label">💰 Precio:</span>
+                        <span className="meta-value">${order.precioOfertado?.toLocaleString()}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-label">🎯 Entrega:</span>
+                        <span className="meta-value">{order.ubicacionEntrega}</span>
                       </div>
                       {order.ejecutante && (
-                        <div className="mt-2">
-                          <small className="text-muted">
-                            <strong>🛵 Domiciliario:</strong> {order.ejecutante.nombre}
-                          </small>
+                        <div className="meta-item">
+                          <span className="meta-label">🛵 Domiciliario:</span>
+                          <span className="meta-value">{order.ejecutante.nombre}</span>
                         </div>
                       )}
-                      <div className="mt-2">
-                        <small className="text-muted">
-                          <strong>📅 Creado:</strong> {new Date(order.createdAt).toLocaleDateString()}
-                        </small>
-                      </div>
-                    </div>
-                    <div className="col-md-4 text-end">
-                      <div className="d-flex flex-column gap-2">
-                        <Link 
-                          to={`/order/${order._id}`} 
-                          className="btn btn-outline-primary btn-sm"
-                        >
-                          Ver detalles
-                        </Link>
-                        {order.ejecutante && order.estado !== 'completado' && order.estado !== 'cancelado' && (
-                          <Link 
-                            to={`/order-tracking/${order._id}`} 
-                            className="btn btn-primary btn-sm"
-                          >
-                            🛵 Seguir en vivo
-                          </Link>
-                        )}
+                      <div className="meta-item">
+                        <span className="meta-label">📅 Creado:</span>
+                        <span className="meta-value">{new Date(order.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Información expandida */}
-                  {expandedOrder === order._id && (
-                    <ExpandedOrderDetails order={order} />
-                  )}
+                  
+                  <div className="order-cta">
+                    <Link to={`/order/${order._id}`} className="btn-modern outline small">
+                      Ver detalles
+                    </Link>
+                    {order.ejecutante && order.estado !== 'completado' && order.estado !== 'cancelado' && (
+                      <Link to={`/order-tracking/${order._id}`} className="btn-modern primary small">
+                        🛵 Seguir en vivo
+                      </Link>
+                    )}
+                  </div>
                 </div>
+
+                {/* Información expandida */}
+                {expandedOrder === order._id && (
+                  <ExpandedOrderDetails order={order} />
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+    </div>
     </div>
   );
 };

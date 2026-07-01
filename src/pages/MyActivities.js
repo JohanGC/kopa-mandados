@@ -37,9 +37,9 @@ const MyActivities = () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta actividad?')) {
       try {
         await axios.delete(`${API_URL}/activities/${activityId}`, {
-        headers: {
+          headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+          }
         });
         
         setActivities(prev => prev.filter(activity => activity._id !== activityId));
@@ -51,13 +51,13 @@ const MyActivities = () => {
     }
   };
 
-  const getStatusBadge = (estado) => {
-    const statuses = {
-      pendiente: 'warning',
-      aprobada: 'success',
-      rechazada: 'danger'
+  const getStatusConfig = (estado) => {
+    const statusConfig = {
+      pendiente: { label: 'Pendiente', color: 'warning', icon: '⏳' },
+      aprobada: { label: 'Aprobada', color: 'success', icon: '✅' },
+      rechazada: { label: 'Rechazada', color: 'error', icon: '❌' }
     };
-    return `badge bg-${statuses[estado]}`;
+    return statusConfig[estado] || statusConfig.pendiente;
   };
 
   const filteredActivities = activities.filter(activity => {
@@ -69,13 +69,46 @@ const MyActivities = () => {
     return activities.filter(activity => activity.estado === status).length;
   };
 
+  const getProgressPercentage = (activity) => {
+    const participants = activity.participantes?.length || 0;
+    return Math.min((participants / activity.maxParticipantes) * 100, 100);
+  };
+
+  const getActivityTypeIcon = (categoria) => {
+    const icons = {
+      deporte: '⚽',
+      cultural: '🎭',
+      educativa: '📚',
+      social: '👥',
+      recreativa: '🎮',
+      gastronomica: '🍽️',
+      musical: '🎵',
+      arte: '🎨',
+      tecnologia: '💻',
+      bienestar: '🧘'
+    };
+    return icons[categoria] || '🎯';
+  };
+
+  const formatDateTime = (fecha, hora) => {
+    const date = new Date(fecha);
+    return {
+      date: date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }),
+      time: hora,
+      fullDate: date.toLocaleDateString('es-ES')
+    };
+  };
+
   if (!currentUser || (currentUser.rol !== 'oferente' && currentUser.rol !== 'administrador')) {
     return (
-      <div className="container mt-5">
-        <div className="alert alert-warning text-center">
-          <h4>No tienes permisos para ver esta página</h4>
+      <div className="modern-container">
+        <div className="error-state">
+          <div className="error-icon">🚫</div>
+          <h2>Acceso restringido</h2>
           <p>Solo los oferentes pueden gestionar sus actividades.</p>
-          <Link to="/activities" className="btn btn-primary">Ver Actividades</Link>
+          <Link to="/activities" className="btn-modern primary">
+            Ver Actividades Públicas
+          </Link>
         </div>
       </div>
     );
@@ -83,193 +116,229 @@ const MyActivities = () => {
 
   if (loading) {
     return (
-      <div className="container mt-4">
-        <div className="text-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
+      <div className="modern-loading">
+        <div className="loading-content">
+          <div className="loading-spinner"></div>
+          <p>Cargando tus actividades...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-12">
-          <div className="card shadow">
-            <div className="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-              <h4 className="mb-0">🎯 Mis Actividades</h4>
-              <Link to="/create-activity" className="btn btn-dark">
-                ➕ Crear Nueva Actividad
-              </Link>
+    <div className="main-content">
+      <div className="modern-container">
+        {/* Header */}
+        <div className="page-header">
+          <div className="header-content">
+            <h1>Mis Actividades</h1>
+            <p>Organiza y gestiona tus experiencias y eventos</p>
+          </div>
+          <Link to="/create-activity" className="btn-modern warning">
+            <span className="btn-icon">+</span>
+            Crear Nueva Actividad
+          </Link>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon total">🎯</div>
+            <div className="stat-content">
+              <div className="stat-number">{activities.length}</div>
+              <div className="stat-label">Total Actividades</div>
             </div>
-            <div className="card-body">
-              {/* Estadísticas rápidas */}
-              <div className="row mb-4">
-                <div className="col-md-3">
-                  <div className="card text-white bg-primary">
-                    <div className="card-body text-center">
-                      <h5 className="card-title">{activities.length}</h5>
-                      <p className="card-text">Total</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="card text-white bg-success">
-                    <div className="card-body text-center">
-                      <h5 className="card-title">{getStatusCount('aprobada')}</h5>
-                      <p className="card-text">Aprobadas</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="card text-white bg-warning">
-                    <div className="card-body text-center">
-                      <h5 className="card-title">{getStatusCount('pendiente')}</h5>
-                      <p className="card-text">Pendientes</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-3">
-                  <div className="card text-white bg-danger">
-                    <div className="card-body text-center">
-                      <h5 className="card-title">{getStatusCount('rechazada')}</h5>
-                      <p className="card-text">Rechazadas</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Filtros */}
-              <div className="mb-4">
-                <div className="btn-group" role="group">
-                  <button
-                    type="button"
-                    className={`btn ${activeFilter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
-                    onClick={() => setActiveFilter('all')}
-                  >
-                    Todas ({activities.length})
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${activeFilter === 'aprobada' ? 'btn-success' : 'btn-outline-success'}`}
-                    onClick={() => setActiveFilter('aprobada')}
-                  >
-                    Aprobadas ({getStatusCount('aprobada')})
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${activeFilter === 'pendiente' ? 'btn-warning' : 'btn-outline-warning'}`}
-                    onClick={() => setActiveFilter('pendiente')}
-                  >
-                    Pendientes ({getStatusCount('pendiente')})
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${activeFilter === 'rechazada' ? 'btn-danger' : 'btn-outline-danger'}`}
-                    onClick={() => setActiveFilter('rechazada')}
-                  >
-                    Rechazadas ({getStatusCount('rechazada')})
-                  </button>
-                </div>
-              </div>
-
-              {/* Lista de actividades */}
-              {filteredActivities.length > 0 ? (
-                <div className="table-responsive">
-                  <table className="table table-striped table-hover">
-                    <thead>
-                      <tr>
-                        <th>Título</th>
-                        <th>Precio</th>
-                        <th>Fecha y Hora</th>
-                        <th>Participantes</th>
-                        <th>Ubicación</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredActivities.map(activity => (
-                        <tr key={activity._id}>
-                          <td>
-                            <strong>{activity.titulo}</strong>
-                            <br />
-                            <small className="text-muted">{activity.categoria}</small>
-                          </td>
-                          <td>
-                            <div>
-                              <del className="text-muted">${activity.precioOriginal?.toLocaleString()}</del>
-                              <br />
-                              <strong className="text-success">${activity.precioDescuento?.toLocaleString()}</strong>
-                            </div>
-                          </td>
-                          <td>
-                            <small>
-                              {new Date(activity.fecha).toLocaleDateString()}
-                              <br />
-                              {activity.hora} - {activity.duracion}
-                            </small>
-                          </td>
-                          <td>
-                            <span className="badge bg-secondary">
-                              {activity.participantes?.length || 0}/{activity.maxParticipantes}
-                            </span>
-                          </td>
-                          <td>
-                            <small>{activity.ubicacion}</small>
-                          </td>
-                          <td>
-                            <span className={getStatusBadge(activity.estado)}>
-                              {activity.estado}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="btn-group btn-group-sm">
-                              <Link
-                                to={`/activity/${activity._id}`}
-                                className="btn btn-outline-primary"
-                                title="Ver detalles"
-                              >
-                                👁️
-                              </Link>
-                              <button
-                                className="btn btn-outline-danger"
-                                onClick={() => handleDeleteActivity(activity._id)}
-                                title="Eliminar actividad"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-5">
-                  <div className="mb-4">
-                    <span style={{ fontSize: '4rem' }}>🎯</span>
-                  </div>
-                  <h4>No tienes actividades</h4>
-                  <p className="text-muted">
-                    {activeFilter === 'all' 
-                      ? 'Aún no has creado ninguna actividad.'
-                      : `No tienes actividades con estado "${activeFilter}".`
-                    }
-                  </p>
-                  <div className="mt-3">
-                    <Link to="/create-activity" className="btn btn-warning">
-                      ➕ Crear Mi Primera Actividad
-                    </Link>
-                  </div>
-                </div>
-              )}
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon approved">✅</div>
+            <div className="stat-content">
+              <div className="stat-number">{getStatusCount('aprobada')}</div>
+              <div className="stat-label">Aprobadas</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon pending">⏳</div>
+            <div className="stat-content">
+              <div className="stat-number">{getStatusCount('pendiente')}</div>
+              <div className="stat-label">Pendientes</div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon rejected">❌</div>
+            <div className="stat-content">
+              <div className="stat-number">{getStatusCount('rechazada')}</div>
+              <div className="stat-label">Rechazadas</div>
             </div>
           </div>
         </div>
+
+        {/* Filtros */}
+        <div className="filters-section">
+          <div className="filter-tabs">
+            <button
+              className={`filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('all')}
+            >
+              Todas ({activities.length})
+            </button>
+            <button
+              className={`filter-tab ${activeFilter === 'aprobada' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('aprobada')}
+            >
+              Aprobadas ({getStatusCount('aprobada')})
+            </button>
+            <button
+              className={`filter-tab ${activeFilter === 'pendiente' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('pendiente')}
+            >
+              Pendientes ({getStatusCount('pendiente')})
+            </button>
+            <button
+              className={`filter-tab ${activeFilter === 'rechazada' ? 'active' : ''}`}
+              onClick={() => setActiveFilter('rechazada')}
+            >
+              Rechazadas ({getStatusCount('rechazada')})
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de Actividades */}
+        {filteredActivities.length > 0 ? (
+          <div className="activities-grid">
+            {filteredActivities.map(activity => {
+              const statusConfig = getStatusConfig(activity.estado);
+              const progress = getProgressPercentage(activity);
+              const participants = activity.participantes?.length || 0;
+              const dateTime = formatDateTime(activity.fecha, activity.hora);
+              
+              return (
+                <div key={activity._id} className="activity-card">
+                  <div className="activity-header">
+                    <div className="activity-title">
+                      <div className="activity-type">
+                        <span className="type-icon">{getActivityTypeIcon(activity.categoria)}</span>
+                        <span className="type-category">{activity.categoria}</span>
+                      </div>
+                      <h3>{activity.titulo}</h3>
+                    </div>
+                    <div className={`status-badge ${statusConfig.color}`}>
+                      <span className="status-icon">{statusConfig.icon}</span>
+                      {statusConfig.label}
+                    </div>
+                  </div>
+
+                  <div className="activity-content">
+                    <div className="activity-image">
+                      <img 
+                        src={activity.imagen || '/images/placeholder-activity.jpg'} 
+                        alt={activity.titulo}
+                      />
+                      <div className="date-badge">
+                        <div className="date-day">{dateTime.date}</div>
+                        <div className="date-time">{activity.hora}</div>
+                      </div>
+                    </div>
+
+                    <div className="activity-details">
+                      <p className="activity-description">{activity.descripcion}</p>
+                      
+                      <div className="pricing-info">
+                        <div className="price-comparison">
+                          {activity.precioOriginal > activity.precioDescuento ? (
+                            <>
+                              <span className="original-price">${activity.precioOriginal?.toLocaleString()}</span>
+                              <span className="current-price">${activity.precioDescuento?.toLocaleString()}</span>
+                            </>
+                          ) : (
+                            <span className="current-price solo">${activity.precioDescuento?.toLocaleString()}</span>
+                          )}
+                        </div>
+                        {activity.precioOriginal > activity.precioDescuento && (
+                          <div className="savings">
+                            Ahorras ${(activity.precioOriginal - activity.precioDescuento)?.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="activity-meta">
+                        <div className="meta-item">
+                          <span className="meta-icon">👥</span>
+                          <span className="meta-text">
+                            {participants} / {activity.maxParticipantes} participantes
+                          </span>
+                        </div>
+                        <div className="meta-item">
+                          <span className="meta-icon">📍</span>
+                          <span className="meta-text">{activity.ubicacion}</span>
+                        </div>
+                        <div className="meta-item">
+                          <span className="meta-icon">⏱️</span>
+                          <span className="meta-text">{activity.duracion}</span>
+                        </div>
+                      </div>
+
+                      <div className="progress-section">
+                        <div className="progress-header">
+                          <span>Inscripciones</span>
+                          <span>{Math.round(progress)}%</span>
+                        </div>
+                        <div className="progress-bar">
+                          <div 
+                            className="progress-fill" 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <div className="progress-text">
+                          {participants} de {activity.maxParticipantes} cupos ocupados
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="activity-actions">
+                    <Link 
+                      to={`/activity/${activity._id}`} 
+                      className="btn-modern outline small"
+                    >
+                      <span className="btn-icon">👁️</span>
+                      Ver Detalles
+                    </Link>
+                    <Link 
+                      to={`/edit-activity/${activity._id}`} 
+                      className="btn-modern primary small"
+                    >
+                      <span className="btn-icon">✏️</span>
+                      Editar
+                    </Link>
+                    <button 
+                      className="btn-modern error small"
+                      onClick={() => handleDeleteActivity(activity._id)}
+                    >
+                      <span className="btn-icon">🗑️</span>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="empty-state large">
+            
+            <h3>No tienes actividades</h3>
+            <p>
+              {activeFilter === 'all' 
+                ? 'Aún no has creado ninguna actividad.'
+                : `No tienes actividades con estado "${activeFilter}".`
+              }
+            </p>
+            <div className="mt-3">
+              <Link to="/create-activity" className="btn-modern warning">
+                ➕ Crear Mi Primera Actividad
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

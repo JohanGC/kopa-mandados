@@ -17,6 +17,15 @@ const GoogleMap = () => {
   const scriptRef = useRef(null);
   const API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 
+  // Colores del diseño moderno
+  const colors = {
+    black: '#000000',
+    lightGray: '#F0F0F0',
+    primary: '#FF005A',
+    secondary: '#FFC800',
+    accent: '#A08CFA'
+  };
+
   // Verificar si Google Maps está completamente cargado
   const isGoogleMapsLoaded = () => {
     return window.google && window.google.maps && window.google.maps.Map;
@@ -116,9 +125,21 @@ const GoogleMap = () => {
         fullscreenControl: true,
         styles: [
           {
-            featureType: "poi",
-            elementType: "labels",
-            stylers: [{ visibility: "on" }]
+            "elementType": "geometry",
+            "stylers": [{ "color": colors.lightGray }]
+          },
+          {
+            "elementType": "labels.text.fill",
+            "stylers": [{ "color": colors.black }]
+          },
+          {
+            "elementType": "labels.text.stroke",
+            "stylers": [{ "color": "#ffffff" }]
+          },
+          {
+            "featureType": "poi",
+            "elementType": "labels",
+            "stylers": [{ "visibility": "on" }]
           }
         ]
       });
@@ -189,32 +210,32 @@ const GoogleMap = () => {
 
   // Obtener domiciliarios disponibles
   const getDomiciliarios = async () => {
-  try {
-    console.log('Obteniendo domiciliarios...');
-    
-    // URL corregida usando el mismo método que Header.js
-    const getApiUrl = () => {
-      if (process.env.NODE_ENV === 'development') {
-        return '';
+    try {
+      console.log('Obteniendo domiciliarios...');
+      
+      // URL corregida usando el mismo método que Header.js
+      const getApiUrl = () => {
+        if (process.env.NODE_ENV === 'development') {
+          return '';
+        }
+        return process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      };
+      
+      const API_BASE = getApiUrl();
+      const url = `${API_BASE}/api/users/domiciliarios/disponibles`;
+      
+      console.log('URL de petición domiciliarios:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
       }
-      return process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    };
-    
-    const API_BASE = getApiUrl();
-    const url = `${API_BASE}/api/users/domiciliarios/disponibles`;
-    
-    console.log('URL de petición domiciliarios:', url);
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Error HTTP: ${response.status}`);
-    }
 
       // Verificar si la respuesta es JSON
       const contentType = response.headers.get('content-type');
@@ -318,7 +339,13 @@ const GoogleMap = () => {
         map: map,
         title: 'Tu ubicación',
         icon: {
-          url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMwMDc1RkYiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
+          url: `data:image/svg+xml;base64,${btoa(`
+            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="15" cy="15" r="12" fill="${colors.primary}" stroke="white" stroke-width="2"/>
+              <circle cx="15" cy="15" r="6" fill="white"/>
+              <circle cx="15" cy="15" r="3" fill="${colors.primary}"/>
+            </svg>
+          `)}`,
           scaledSize: new window.google.maps.Size(30, 30),
           anchor: new window.google.maps.Point(15, 15)
         },
@@ -327,9 +354,14 @@ const GoogleMap = () => {
 
       const infoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div class="p-2">
-            <h6>📍 Tu ubicación</h6>
-            <small>Lat: ${location.lat.toFixed(4)}<br/>Lng: ${location.lng.toFixed(4)}</small>
+          <div class="modern-info-window">
+            <div class="info-header" style="background: ${colors.primary}">
+              <h6>📍 Tu ubicación</h6>
+            </div>
+            <div class="info-content">
+              <p><strong>Lat:</strong> ${location.lat.toFixed(4)}</p>
+              <p><strong>Lng:</strong> ${location.lng.toFixed(4)}</p>
+            </div>
           </div>
         `
       });
@@ -380,21 +412,23 @@ const GoogleMap = () => {
               title: `${domiciliario.nombre} - ${domiciliario.placaVehiculo}`,
               icon: {
                 url: `data:image/svg+xml;base64,${btoa(iconSvg)}`,
-                scaledSize: new window.google.maps.Size(25, 25),
-                anchor: new window.google.maps.Point(12.5, 12.5)
+                scaledSize: new window.google.maps.Size(28, 28),
+                anchor: new window.google.maps.Point(14, 14)
               }
             });
 
             const infoWindow = new window.google.maps.InfoWindow({
               content: `
-                <div class="p-2">
-                  <h6>${getVehicleEmoji(domiciliario.tipoVehiculo)} ${domiciliario.nombre}</h6>
-                  <small>
-                    <strong>Placa:</strong> ${domiciliario.placaVehiculo}<br/>
-                    <strong>Vehículo:</strong> ${domiciliario.tipoVehiculo}<br/>
-                    <strong>Estado:</strong> ${domiciliario.disponible ? '🟢 Disponible' : '🔴 Ocupado'}<br/>
-                    <strong>Tel:</strong> ${domiciliario.telefono}
-                  </small>
+                <div class="modern-info-window">
+                  <div class="info-header" style="background: ${getVehicleColor(domiciliario.tipoVehiculo)}">
+                    <h6>${getVehicleEmoji(domiciliario.tipoVehiculo)} ${domiciliario.nombre}</h6>
+                  </div>
+                  <div class="info-content">
+                    <p><strong>Placa:</strong> ${domiciliario.placaVehiculo}</p>
+                    <p><strong>Vehículo:</strong> ${domiciliario.tipoVehiculo}</p>
+                    <p><strong>Estado:</strong> ${domiciliario.disponible ? '🟢 Disponible' : '🔴 Ocupado'}</p>
+                    <p><strong>Tel:</strong> ${domiciliario.telefono}</p>
+                  </div>
                 </div>
               `
             });
@@ -418,21 +452,26 @@ const GoogleMap = () => {
     }
   };
 
+  // Colores para diferentes tipos de vehículos
+  const getVehicleColor = (tipoVehiculo) => {
+    const vehicleColors = {
+      moto: colors.secondary,
+      bicicleta: colors.accent,
+      carro: colors.primary,
+      caminando: '#6c757d'
+    };
+    return vehicleColors[tipoVehiculo] || colors.primary;
+  };
+
   // Iconos para diferentes tipos de vehículos
   const getVehicleIcon = (tipoVehiculo) => {
-    const colors = {
-      moto: '#28a745',
-      bicicleta: '#17a2b8', 
-      carro: '#ffc107',
-      caminando: '#dc3545'
-    };
-
-    const color = colors[tipoVehiculo] || '#6c757d';
+    const color = getVehicleColor(tipoVehiculo);
     const letter = getVehicleLetter(tipoVehiculo);
 
-    return `<svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12.5" cy="12.5" r="12" fill="${color}" stroke="white" stroke-width="1"/>
-      <text x="12.5" y="16" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${letter}</text>
+    return `<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="14" cy="14" r="13" fill="${color}" stroke="white" stroke-width="2"/>
+      <circle cx="14" cy="14" r="10" fill="white" opacity="0.9"/>
+      <text x="14" y="18" text-anchor="middle" fill="${color}" font-size="12" font-weight="bold">${letter}</text>
     </svg>`;
   };
 
@@ -511,13 +550,14 @@ const GoogleMap = () => {
 
   if (!API_KEY) {
     return (
-      <div className="alert alert-danger m-3">
-        <h6>❌ Error de configuración</h6>
+      <div className="modern-error-state">
+        <div className="error-icon">❌</div>
+        <h3>Error de configuración</h3>
         <p>
           La clave de Google Maps no está configurada. 
           Agrega <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> a tu archivo <code>.env</code>
         </p>
-        <small className="text-muted">
+        <small>
           Ejemplo: REACT_APP_GOOGLE_MAPS_API_KEY=tu_clave_aqui
         </small>
       </div>
@@ -525,86 +565,300 @@ const GoogleMap = () => {
   }
 
   return (
-    <div className="card mb-4">
-      <div className="card-header btn-1 bg-primary text-white d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">🛵 Mapa de Domiciliarios</h5>
-        <button 
-          className="btn btn-light btn-sm"
-          onClick={handleUpdateLocation}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <span className="spinner-border spinner-border-sm me-2"></span>
-              Obteniendo...
-            </>
-          ) : (
-            '📍 Actualizar mi ubicación'
+    <div className="modern-map-container">
+      <div className="modern-card">
+        <div className="modern-card-header" style={{ background: colors.primary }}>
+          <div className="header-content">
+            <h3> Mapa de Domiciliarios</h3>
+          </div>
+          <button 
+            className="modern-btn secondary"
+            onClick={handleUpdateLocation}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="loading-spinner"></span>
+                Obteniendo...
+              </>
+            ) : (
+              '📍 Actualizar mi ubicación'
+            )}
+          </button>
+        </div>
+        
+        <div className="modern-card-body">
+          {error && (
+            <div className="modern-alert warning">
+              <div className="alert-content">
+                <span>{error}</span>
+              </div>
+              <button 
+                className="modern-btn outline small"
+                onClick={() => window.location.reload()}
+              >
+                Reintentar
+              </button>
+            </div>
           )}
-        </button>
-      </div>
-      
-      <div className="card-body p-0">
-        {error && (
-          <div className="alert alert-warning m-3 mb-0" role="alert">
-            <small>{error}</small>
-            <button 
-              className="btn btn-sm btn-outline-primary ms-2"
-              onClick={() => window.location.reload()}
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
-        
-        {loading && !mapsLoaded && (
-          <div className="text-center p-4">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Cargando mapa...</span>
-            </div>
-            <p className="mt-2 text-muted">Cargando mapa...</p>
-          </div>
-        )}
-        
-        <div 
-          ref={mapRef} 
-          style={{ 
-            height: '400px', 
-            width: '100%',
-            minHeight: '400px',
-            backgroundColor: '#f8f9fa' // Color de fondo mientras carga
-          }}
-          className="rounded-bottom"
-        />
-        
-        <div className="p-3 border-top">
-          <div className="row text-center">
-            <div className="col-md-3 mb-2">
-              <span className="badge bg-primary">📍</span>
-              <small className="d-block mt-1">Tu ubicación</small>
-            </div>
-            <div className="col-md-3 mb-2">
-              <span className="badge bg-success">M</span>
-              <small className="d-block mt-1">Moto</small>
-            </div>
-            <div className="col-md-3 mb-2">
-              <span className="badge bg-info">B</span>
-              <small className="d-block mt-1">Bicicleta</small>
-            </div>
-            <div className="col-md-3 mb-2">
-              <span className="badge bg-warning">C</span>
-              <small className="d-block mt-1">Carro</small>
-            </div>
-          </div>
           
-          <div className="mt-2 text-center">
-            <small className="text-muted">
-              {domiciliarios.length} domiciliarios disponibles • 
-              {userLocation ? ' Ubicación activa' : ' Sin ubicación'}
-            </small>
+          {loading && !mapsLoaded && (
+            <div className="modern-loading">
+              <div className="loading-content">
+                <div className="loading-spinner large"></div>
+                <p>Cargando mapa...</p>
+              </div>
+            </div>
+          )}
+          
+          <div 
+            ref={mapRef} 
+            className="modern-map"
+            style={{ 
+              height: '450px', 
+              width: '100%',
+              minHeight: '450px',
+              backgroundColor: colors.lightGray
+            }}
+          />
+          
+          <div className="map-footer">
+            <div className="legend-grid">
+              <div className="legend-item">
+                <span className="legend-marker user"></span>
+                <small>Tu ubicación</small>
+              </div>
+              <div className="legend-item">
+                <span className="legend-marker moto"></span>
+                <small>Moto</small>
+              </div>
+              <div className="legend-item">
+                <span className="legend-marker bicicleta"></span>
+                <small>Bicicleta</small>
+              </div>
+              <div className="legend-item">
+                <span className="legend-marker carro"></span>
+                <small>Carro</small>
+              </div>
+            </div>
+            
+            <div className="map-stats">
+              <small>
+                <strong>{domiciliarios.length}</strong> domiciliarios disponibles • 
+                {userLocation ? ' 📍 Ubicación activa' : ' ❌ Sin ubicación'}
+              </small>
+            </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .modern-map-container {
+          margin-bottom: 2rem;
+        }
+
+        .modern-card {
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          overflow: hidden;
+        }
+
+        .modern-card-header {
+          padding: 1.5rem;
+          color: white;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .header-content h3 {
+          margin: 0;
+          font-size: 1.5rem;
+          font-weight: 700;
+        }
+
+        .header-content p {
+          margin: 0.25rem 0 0 0;
+          opacity: 0.9;
+          font-size: 0.9rem;
+        }
+
+        .modern-card-body {
+          padding: 0;
+        }
+
+        .modern-map {
+          border-radius: 0 0 16px 16px;
+        }
+
+        .map-footer {
+          padding: 1.25rem;
+          border-top: 1px solid ${colors.lightGray};
+          background: white;
+        }
+
+        .legend-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .legend-marker {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-marker.user {
+          background: ${colors.primary};
+        }
+
+        .legend-marker.moto {
+          background: ${colors.secondary};
+        }
+
+        .legend-marker.bicicleta {
+          background: ${colors.accent};
+        }
+
+        .legend-marker.carro {
+          background: ${colors.primary};
+        }
+
+        .map-stats {
+          text-align: center;
+          padding-top: 0.5rem;
+          border-top: 1px solid ${colors.lightGray};
+        }
+
+        .modern-btn {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9rem;
+        }
+
+        .modern-btn.secondary {
+          background: ${colors.secondary};
+          color: ${colors.black};
+        }
+
+        .modern-btn.secondary:hover:not(:disabled) {
+          background: #e6b400;
+          transform: translateY(-2px);
+        }
+
+        .modern-btn.outline {
+          background: transparent;
+          border: 2px solid ${colors.primary};
+          color: ${colors.primary};
+        }
+
+        .modern-btn.small {
+          padding: 0.5rem 1rem;
+          font-size: 0.8rem;
+        }
+
+        .modern-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .modern-alert {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
+          margin: 1rem;
+          border-radius: 12px;
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+        }
+
+        .modern-alert.warning {
+          background: #fff3cd;
+          border-color: #ffeaa7;
+        }
+
+        .modern-loading {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 3rem;
+        }
+
+        .loading-content {
+          text-align: center;
+        }
+
+        .loading-spinner {
+          width: 2rem;
+          height: 2rem;
+          border: 3px solid ${colors.lightGray};
+          border-top: 3px solid ${colors.primary};
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 1rem;
+        }
+
+        .loading-spinner.large {
+          width: 3rem;
+          height: 3rem;
+        }
+
+        .modern-error-state {
+          text-align: center;
+          padding: 3rem 2rem;
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .error-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+          .modern-card-header {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+          }
+
+          .header-content {
+            margin-bottom: 1rem;
+          }
+
+          .legend-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+      `}</style>
     </div>
   );
 };
